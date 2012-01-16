@@ -37,11 +37,13 @@ def write_sql_header(out=sys.stdout):
 
 INSERT_STR = 'INSERT INTO %s VALUES %s;\n'
 
+
+
 columns_d = {'Name': (0, 'name', str), 
              'Aliquot_Id': (1, 'aliquot_id', int), 
              'Parzellennr': (2, 'parzellennr', int), 
              'Standort': (3, 'location_id', int),
-             'Sorte': (4, 'cultivar', str),
+             'Sorte': (4, 'cultivar', lambda x:str(x).upper()),
              'Pflanzen_Parzelle': (5, 'pflanzen_parzelle', int),
              'Knollenmasse_kgFW_Parzelle': (6, 'knollenmasse_kgfw_parzelle', 
                                             float),
