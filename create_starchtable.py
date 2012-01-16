@@ -95,7 +95,7 @@ def main(argv):
         # print fn
         data, headers  = p_xls.read_xls_data(fn, sheet_index=sheet_index)       
         index = write_sql_table(data, table_name=YIELD_TABLE_NAME, index=index)
-        print index
+        # print index
 
 
     return None
