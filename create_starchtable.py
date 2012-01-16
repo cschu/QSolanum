@@ -88,7 +88,7 @@ def write_sql_table(data, table_name='DUMMY', out=sys.stdout, index=0):
 def main(argv):
     
     write_sql_header()
-    return None
+    # return None
     index = 0
     sheet_index=p_xls.DEFAULT_PARCELLE_INDEX 
     for fn in glob.glob('TROST_Knollenernte*.xls'):
