@@ -36,7 +36,8 @@ def main(argv):
     sheet_index=p_xls.DEFAULT_TREATMENT_ALIQUOT_INDEX
 
     fn = argv[0]
-    data, headers  = p_xls.read_xls_data(fn, sheet_index=sheet_index)       
+    data, headers  = p_xls.read_xls_data(fn, sheet_index=sheet_index) 
+    # return None
     index = sql.write_sql_table(data, columns_d, 
                                 table_name=TREATMENT_TABLE_NAME, index=index)
     return None

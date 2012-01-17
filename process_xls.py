@@ -12,6 +12,25 @@ def cast_str(string):
     try:
         return str(string)
     except:
+        return cast_unicode(string)
+    pass
+
+umlaute = {u'\u00E4': 'ae',
+           u'\u00C4': 'AE',
+           u'\u00F6': 'oe',
+           u'\u00D6': 'OE',           
+           u'\u00FC': 'ue',
+           u'\u00DC': 'UE',
+           u'\u00DF': 'ss'}
+#
+def cast_unicode(string):    
+    """ Maybe this is dilletantish, but I don't know better... yet! """
+    try:
+        ustr = unicode(string, 'utf-8')
+        for k, v in umlaute.items():
+            ustr = ustr.replace(k, v)
+        return str(ustr)
+    except:
         return 'UNICRAP'
     pass
 
