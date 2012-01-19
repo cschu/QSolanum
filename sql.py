@@ -5,8 +5,8 @@ import sys
 import math
 
 USE_DB = 'USE %s;'
-DROP_TABLE = 'DROP TABLE %s;'
-CREATE_TABLE = 'CREATE TABLE %s(\n%s\n);' 
+DROP_TABLE = 'DROP TABLE IF EXISTS %s;'
+CREATE_TABLE = 'CREATE TABLE %s(\n%s\n) ENGINE=InnoDB DEFAULT CHARSET=utf8;' 
 INSERT_STR = 'INSERT INTO %s VALUES %s;\n'
 
 def write_sql_header(db_name, table_name, table, out=sys.stdout):
@@ -27,7 +27,7 @@ def format_entry(entry):
     return '(%s)' % ','.join(map(str, formatted))
     
 
-def write_sql_table(data, columns_d, table_name='DUMMY', out=sys.stdout, index=0):
+def write_sql_table(data, columns_d, table_name='DUMMY', out=sys.stdout):
     for dobj in data:
         entry = []        
         for key, val in columns_d.items():
@@ -37,8 +37,7 @@ def write_sql_table(data, columns_d, table_name='DUMMY', out=sys.stdout, index=0
                 entry.append(val[:-1] + (str, 'NULL'))
             pass
 
-        entry = [(-1, 'id', int, index)] + entry
-        index += 1
+        entry = [(-1, 'id', str, 'NULL')] + entry # add the id
 
         try:
             out.write(INSERT_STR % (table_name,
@@ -48,7 +47,7 @@ def write_sql_table(data, columns_d, table_name='DUMMY', out=sys.stdout, index=0
             sys.stderr.write('EXC: %s\n' % sorted(entry))
             sys.exit(1)
         
-    return index
+    return None
 
 
 ###

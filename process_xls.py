@@ -48,12 +48,20 @@ DEFAULT_PARCELLE_INDEX = 2
 """ Treatment/Aliquot relations are stored on sheet 1. """
 DEFAULT_TREATMENT_ALIQUOT_INDEX = 0
 
+def cast(obj):
+    try:
+        return float(obj)
+    except:
+        if obj is None:
+            return obj
+        else:
+            return str(obj)
 
 #
 class DataObject(object):
     def __init__(self, headers=[], values=[]):
         for header, value in zip(headers, values):
-            setattr(self, header, value)
+            setattr(self, header, cast(value))
         pass
     def __add__(self, other):
         res = DataObject(self.__dict__.keys(), self.__dict__.values())
