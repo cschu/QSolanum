@@ -14,19 +14,6 @@ the_db = _mysql.connect(host=login.DB_HOST,
 import process_xls as p_xls
 
 
-"""
-|  1 |   5544 | Atting                 |
-|  2 |   5541 | Boehlendorf            |
-|  3 |   5546 | Buetow                 |
-|  4 |   5506 | JKI Grossluesewitz      |
-|  5 |   5540 | Kaltenberg             |
-|  6 |   5519 | LWK Dethlingen         |
-|  7 |   5542 | Norika Gross Luesewitz |
-|  8 |   5543 | Petersgroden           |
-|  9 |   5539 | Schrobenhausen         |
-| 10 |   5545 | Windeby                |
-| 11 |   4537 | Golm                   |
-"""
 CONTROLLED_TRIALS = [4537, 5506]
 FIELD_TRIALS = [5544, 5541, 5546, 5540, 5542, 5543, 5539, 5545]
 DETHLINGEN_TRIALS = [5519]
