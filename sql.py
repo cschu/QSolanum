@@ -4,6 +4,19 @@ import os
 import sys
 import math
 
+import login
+the_db = login.get_db()
+
+location_query = """
+SELECT id, limsid FROM locations
+""".strip()
+
+def get_locations():
+    query = the_db.query(location_query)
+    data = the_db.store_result().fetch_row(how=1, maxrows=99)
+    # print data
+    return dict([(int(d['limsid']), int(d['id'])) for d in data])
+
 USE_DB = 'USE %s;'
 DROP_TABLE = 'DROP TABLE IF EXISTS %s;'
 CREATE_TABLE = 'CREATE TABLE %s(\n%s\n) ENGINE=InnoDB DEFAULT CHARSET=utf8;' 

@@ -46,20 +46,27 @@ default_values = {
     }
 
 
+def annotate_locations(data):
+    locations = sql.get_locations()
+    for dobj in data:
+        dobj.Standort = locations[dobj.Standort]
+    return data
+    
 
 
 ###
 def main(argv):
     
     if len(argv) == 0:
-        sys.stderr.write('Missing input file.\nUsage: python create_trmttable.py <dir>\n')
+        sys.stderr.write('Missing input file.\nUsage: python create_starchtable.py <dir>\n')
         sys.exit(1)
     
     sql.write_sql_header(DB_NAME, YIELD_TABLE_NAME, YIELD_TABLE)
     sheet_index=p_xls.DEFAULT_PARCELLE_INDEX 
     dir_name = argv[0]
     for fn in glob.glob('%s/%s'% (dir_name, 'TROST_Knollenernte*.xls')):
-        data, headers  = p_xls.read_xls_data(fn, sheet_index=sheet_index)   
+        data, headers  = p_xls.read_xls_data(fn, sheet_index=sheet_index)
+        data = annotate_locations(data)
         sql.write_sql_table(data, columns_d, table_name=YIELD_TABLE_NAME)
     
 
