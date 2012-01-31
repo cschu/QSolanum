@@ -67,6 +67,8 @@ class DataObject(object):
         res = DataObject(self.__dict__.keys(), self.__dict__.values())
         res.__dict__.update(other.__dict__)
         return res
+    def __repr__(self):
+        return str(self.__dict__)
     pass
 
 # TODO: Sanity checks!
