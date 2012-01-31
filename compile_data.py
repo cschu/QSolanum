@@ -7,10 +7,8 @@ import math
 import _mysql
 
 import login
-the_db = _mysql.connect(host=login.DB_HOST,
-                        user=login.DB_USER,
-                        passwd=login.DB_PASS,
-                        db=login.DB_NAME)
+the_db = login.get_db()
+
 import process_xls as p_xls
 
 
@@ -58,7 +56,7 @@ def median(v):
 def compute_starch_rel_controlled(data, location):
     """ GOLM/JKI """
     results = {}
-    loc_data = [d for d in data if d.locationid == location]
+    loc_data = [d for d in data if d.location_id == location]
     by_cult = group_by_cultivar(loc_data)
     for cultivar, samples in by_cult.items():
         ctrl_yield = median([dobj.starch_abs 
@@ -72,10 +70,9 @@ def compute_starch_rel_controlled(data, location):
 
 #
 def compute_starch_rel_dethlingen(data):
-    """ Dethlingen """
-    
+    """ Dethlingen """    
     results = {}
-    loc_data = [d for d in data if d.locationid == 5519]
+    loc_data = [d for d in data if d.location_id == 5519]
     by_cult = group_by_cultivar(loc_data)
     for cultivar, samples in by_cult.items():
         ctrl_yield = median([dobj.starch_abs 
@@ -92,12 +89,11 @@ def compute_starch_rel_dethlingen(data):
 
 #
 def compute_field_trials(data):
-    results = {}
-    
+    results = {}    
     median_all = median([dobj.starch_abs for dobj in data                      
-                         if dobj.locationid in FIELD_TRIALS])
+                         if dobj.location_id in FIELD_TRIALS])
     for trial in FIELD_TRIALS:
-        loc_data = [d for d in data if d.locationid == trial]
+        loc_data = [d for d in data if d.location_id == trial]
         by_cult = group_by_cultivar(loc_data)
         for cultivar, samples in by_cult.items():
             key = (cultivar, 'drought')
@@ -110,16 +106,74 @@ def compute_field_trials(data):
 
     
 
-the_query = """
-SELECT starch_yield.id, staerkegehalt_g_kg, knollenmasse_kgfw_parzelle, pflanzen_parzelle, locationid, cultivar, treatments.id, treatment 
+starch_query = """
+SELECT starch_yield.id, staerkegehalt_g_kg, knollenmasse_kgfw_parzelle, pflanzen_parzelle, location_id, cultivar, treatments.id, treatment 
 FROM starch_yield 
 LEFT JOIN (treatments) 
 ON (starch_yield.aliquotid = treatments.aliquotid)
-"""
+""".strip()
+
+climate_query = """
+SELECT rainfall, tmin, tmax, locations.limsid, locations.id
+FROM temps
+LEFT JOIN (locations)
+ON (locations.id = temps.location_id)
+ORDER BY locations.limsid
+""".strip()
+
+###
+def calc_heat_sum(t_range, tbase=6.0):
+    """
+    Daily heat summation is defined as:
+    heat_sum_d = max(tx - tbase, 0), with    
+    tx = (tmin + tmax)/2 and
+    tmax = min(tmax_measured, 30.0) 
+    """
+    tmax = min(t_range[1], 30.0)
+    tx = (t_range[0] + tmax) / 2.0
+    return max(tx - tbase, 0.0)
+
+
+###
+def compute_heat_summation(data):
+    """
+    What happens when there are differences in the 
+    number of temperature measurements for the individual
+    locations? 
+    """
+    heat_d = {}
+    for dobj in data:
+        if dobj.tmin is None or dobj.tmax is None: 
+            print 'TROUBLE', dobj
+            continue            
+            
+        key = tuple(map(int, (dobj.limsid, dobj.id)))
+        heat_d[key] = heat_d.get(key, []) + [calc_heat_sum((dobj.tmin,
+                                                            dobj.tmax))]
+        
+    for k in heat_d:
+        # print k, heat_d[k]
+        heat_d[k] = (sum(heat_d[k]), len(heat_d[k]))
+    return heat_d
+
 
 ###
 def main(argv):
-    the_db.query(the_query.strip())
+    the_db.query(climate_query)
+    data = the_db.store_result().fetch_row(how=1, maxrows=999999)
+
+    data = [p_xls.DataObject(d.keys(), d.values()) for d in data]
+    
+    print [str(x) for x in data]
+    
+    print 'lims_loc\tloc\theat_sum\t#temps\n'
+    for k, v in compute_heat_summation(data).items():
+        print '%i\t%i\t%.3f\t%i' % (k + v), v[0]/v[1]
+    
+
+###
+def main_starch(argv):
+    the_db.query(starch_query)
     data = the_db.store_result().fetch_row(how=1, maxrows=999999)
     
     data = [p_xls.DataObject(d.keys(), d.values()) for d in data]
