@@ -21,6 +21,10 @@ USE_DB = 'USE %s;'
 DROP_TABLE = 'DROP TABLE IF EXISTS %s;'
 CREATE_TABLE = 'CREATE TABLE %s(\n%s\n) ENGINE=InnoDB DEFAULT CHARSET=utf8;' 
 INSERT_STR = 'INSERT INTO %s VALUES %s;\n'
+"""
+INSERT_SELECT_STR = ''
+insert into plants (id, location_id) select NULL, locations.id from locations where locations.limsid = 1111;
+"""
 
 def write_sql_header(db_name, table_name, table, out=sys.stdout):
     out.write('%s\n' % USE_DB % db_name)
