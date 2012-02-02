@@ -14,8 +14,8 @@ DB_NAME = 'trost_prod'
 TABLE_NAME = 'subspecies'
 TABLE = [
     'id INT AUTO_INCREMENT',
-    'species_id INT',
     'limsid INT',
+    'species_id INT',
     'cultivar VARCHAR(45)',
     'breeder VARCHAR(45)',
     'reifegruppe VARCHAR(10)',
