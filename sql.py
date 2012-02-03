@@ -26,6 +26,15 @@ INSERT_SELECT_STR = ''
 insert into plants (id, location_id) select NULL, locations.id from locations where locations.limsid = 1111;
 """
 
+INSERT_PLANTS2_STR = """
+INSERT INTO plants2 
+(id, aliquot, name, subspecies_id, location_id, culture_id, sampleid,
+description, created)
+SELECT NULL, %s, %s, subspecies.id, locations.id, %s, %s, '', ''
+FROM subspecies, locations
+WHERE subspecies.limsid = %s AND locations.limsid = %s;
+""".strip()
+
 def write_sql_header(db_name, table_name, table, out=sys.stdout):
     out.write('%s\n' % USE_DB % db_name)
     out.write('%s\n' % DROP_TABLE % table_name)
@@ -41,31 +50,43 @@ def format_entry(entry):
             formatted.append("'%s'" % x)
         else:
             formatted.append(x)
-    return '(%s)' % ','.join(map(str, formatted))
+    # return '(%s)' % ','.join(map(str, formatted))
+    return formatted
+
     
 
-def write_sql_table(data, columns_d, table_name='DUMMY', out=sys.stdout):
+def prepare_sql_table(data, columns_d):
+    rows = []
     for dobj in data:
-        entry = []        
+        row = []
         for key, val in columns_d.items():
             if hasattr(dobj, key) and getattr(dobj, key) != '':
-                entry.append(val + (getattr(dobj, key),))
+                row.append(val + (getattr(dobj, key),))
             else:
-                entry.append(val[:-1] + (str, 'NULL'))
-            pass
+                row.append(val[:-1] + (str, 'NULL'))
+                pass
+        row = [(-1, 'id', str, 'NULL')] + row # add the id
+        rows.append(sorted(row))
+    return rows
 
-        entry = [(-1, 'id', str, 'NULL')] + entry # add the id
 
-        try:
-            out.write(INSERT_STR % (table_name,
-                                    format_entry([x[2](x[3]) 
-                                                  for x in sorted(entry)])))
+def write_standard_sql_table(rows, table_name='DUMMY', out=sys.stdout):
+    for row in rows:
+        try:       
+            formatted = format_entry([x[2](x[3]) for x in row])
+            entry = '(%s)' % ','.join(map(str, formatted))
+            out.write(INSERT_STR % (table_name, entry))
         except:
-            sys.stderr.write('EXC: %s\n' % sorted(entry))
+            sys.stderr.write('EXC: %s\n' % row)
             sys.exit(1)
-        
-    return None
+    pass
 
+# legacy support
+def write_sql_table(data, columns_d, table_name='DUMMY', out=sys.stdout):
+    write_standard_sql_table(prepare_sql_table(data, columns_d),
+                             table_name=table_name, out=out)
+    pass
+    
 
 ###
 def main(argv):

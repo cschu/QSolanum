@@ -37,14 +37,6 @@ columns_d = {
     'Itempobject': (6, 'plantspparcelle', int),
     'location_id': (7, 'location_id', int)}
 
-def annotate_locations(data):
-    locations = sql.get_locations()
-    for dobj in data:
-        dobj.Standort = locations[dobj.Standort]
-    return data
-    
-
-
 
 ###
 def main(argv):

@@ -29,19 +29,12 @@ TABLE = [
 columns_d = {
     'Aliquot_Id': (0, 'aliquot', int),
     'Name': (1, 'name', str),
-    'Sample_Id_-_Subspecies_Id': (2, 'subspecies_id', int),
-    'Location_Id_-_Location_Id': (3, 'location_id', int),
-    'Culture_-_Study_Id': (4, 'culture_id', int),
-    'Sample_Id_-_Sample_Id': (5, 'sampleid', int),
+    'Subspecies_Id': (2, 'subspecies_id', int),
+    'Location_Id': (3, 'location_id', int),
+    'Culture_Id': (4, 'culture_id', int),
+    'Sample_Id': (5, 'sampleid', int),
     'Description': (6, 'description', str),
     'created': (7, 'created', str)}
-    
-
-def annotate_locations(data):
-    locations = sql.get_locations()
-    for dobj in data:
-        dobj.Standort = locations[dobj.Standort]
-    return data
     
 
 
@@ -50,16 +43,47 @@ def annotate_locations(data):
 def main(argv):
     
     if len(argv) == 0:
-        sys.stderr.write('Missing input file.\nUsage: python create_subspeciestable.py <dir>\n')
+        sys.stderr.write('Missing input file.\nUsage: python create_plants2table.py <dir>\n')
         sys.exit(1)
     
     sql.write_sql_header(DB_NAME, TABLE_NAME, TABLE)
     dir_name = argv[0]
-    fn = '%s/%s' % (dir_name, 'culture_data.xls')
+    fn = '%s/%s' % (dir_name, 'current_plants.xls')
     data, headers  = p_xls.read_xls_data(fn)
+
+    """
+    Some plants do not have a subspecies id - causing trouble
+    further downstream. Hence, I
+    inserted dummy into subspecies table:
+    insert into subspecies values(NULL, -1, 1, 'UNKNOWN', NULL, NULL, 
+    NULL, NULL);
+    """
     for dobj in data:
         dobj.created = DEFAULT_DATE_STR
-    sql.write_sql_table(data, columns_d, table_name=TABLE_NAME)   
+        if dobj.Subspecies_Id == '':
+            dobj.Subspecies_Id = -1
+            
+    """ 
+    Table writing logic is specific to this table,
+    therefore it does not use sql.write_sql_table.
+    """
+    for row in sql.prepare_sql_table(data, columns_d):
+        # print row
+        try:
+            """
+            This adds the required values for subspecies.limsid 
+            and locations.limsid to the insert query.
+            TODO: culture-id!, possibly sample-id!
+            """
+            entry = [x[2](x[3])
+                     for x in row[1:3] + row[5:7]]
+            entry += (int(row[3][3]), int(row[4][3]))
+            entry = tuple(entry)
+
+            sys.stdout.write('%s\n' % (sql.INSERT_PLANTS2_STR % entry))
+        except:
+            sys.stderr.write('EXC: %s\n' % row)
+            sys.exit(1)
 
     return None
 
