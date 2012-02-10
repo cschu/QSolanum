@@ -25,6 +25,8 @@ TABLE = [
     'experiment_id INT',
     'plantspparcelle INT',
     'location_id INT',
+    'planted DATE',
+    'terminated DATE',
     'PRIMARY KEY(id)']
 
 columns_d = {
@@ -35,7 +37,9 @@ columns_d = {
     'Description': (4, 'description', str),
     'experiment_id': (5, 'experiment_id', int),
     'Itempobject': (6, 'plantspparcelle', int),
-    'location_id': (7, 'location_id', int)}
+    'location_id': (7, 'location_id', int),
+    'planted': (8, 'planted', str),
+    'terminated': (9, 'terminated', str)}
 
 
 ###
@@ -49,6 +53,7 @@ def main(argv):
     dir_name = argv[0]
     fn = '%s/%s' % (dir_name, 'culture_data.xls')
     data, headers  = p_xls.read_xls_data(fn)
+    # return None
     for dobj in data:
         dobj.experiment_id = DEFAULT_EXPERIMENT_ID
         dobj.condition = ''

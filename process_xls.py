@@ -14,7 +14,7 @@ import cast
 CAST_FUNC = {xlrd.XL_CELL_EMPTY: str,
              xlrd.XL_CELL_TEXT: cast.cast_str,
              xlrd.XL_CELL_NUMBER: float,
-             xlrd.XL_CELL_DATE: float,
+             xlrd.XL_CELL_DATE: cast.cast_str,
              xlrd.XL_CELL_BOOLEAN: int,
              xlrd.XL_CELL_ERROR: int,
              xlrd.XL_CELL_BLANK: cast.cast_str}
@@ -36,8 +36,18 @@ def read_xls_data(fn, sheet_index=0):
     col_headers = [str(cell.value).replace(' ', '_')
                    for cell in sheet.row(0)]
     for i in xrange(1, sheet.nrows):
-        row = [CAST_FUNC[cell.ctype](cell.value) for cell in sheet.row(i)]
+        row = []
+        for cell in sheet.row(i):
+            if cell.ctype == xlrd.XL_CELL_DATE:
+                # print 'DATE', cell.value
+                # print xlrd.xldate_as_tuple(cell.value, book.datemode)
+                cell_date = xlrd.xldate_as_tuple(cell.value, book.datemode)
+                row.append('%4i-%02i-%02i' % cell_date[:3])
+            else:
+                row.append(CAST_FUNC[cell.ctype](cell.value))
+        # row = [CAST_FUNC[cell.ctype](cell.value) for cell in sheet.row(i)]
         data.append(DO.DataObject(col_headers, row))
+        # print data[-1].__dict__
     return data, col_headers
 
 
