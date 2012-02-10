@@ -57,8 +57,8 @@ def median(v):
         return v_sorted[n/2]
 #
 
-def is_control(sample):
-    return sample.treatment in [169, 171]
+def is_control(treatment):
+    return treatment in [169, 171]
 
 DROUGHT_ID = 170
 DETHLINGEN_DROUGHT_IDS = (170, 172)
@@ -71,12 +71,12 @@ def compute_starch_rel_controlled(data, location):
     for cultivar, samples in by_cult.items():
         ctrl_yield = median([dobj.starch_abs 
                              for dobj in samples
-                             if is_control(dobj)])
-        key = (cultivar, DROUGHT_ID)
+                             if is_control(dobj.treatment)])
+        key = (location, cultivar, DROUGHT_ID)
         results[key] = median([dobj.starch_abs/ctrl_yield
                                for dobj in samples
-                               if not is_control(dobj)])       
-        return results
+                               if not is_control(dobj.treatment)])       
+    return results
 
 #
 def compute_starch_rel_dethlingen(data):
@@ -87,9 +87,9 @@ def compute_starch_rel_dethlingen(data):
     for cultivar, samples in by_cult.items():
         ctrl_yield = median([dobj.starch_abs 
                              for dobj in samples
-                             if is_control(dobj)])
+                             if is_control(dobj.treatment)])
         for trmt in DETHLINGEN_DROUGHT_IDS:
-            key = (cultivar, trmt)
+            key = (5519, cultivar, trmt)
             results[key] = median([dobj.starch_abs/ctrl_yield
                                    for dobj in samples
                                    if dobj.treatment == trmt])       
@@ -100,17 +100,21 @@ def compute_starch_rel_dethlingen(data):
 #
 def compute_field_trials(data):
     results = {}    
+
+    print set([dobj.location_id for dobj in data])
+
     median_all = median([dobj.starch_abs for dobj in data                      
                          if dobj.location_id in FIELD_TRIALS])
     for trial in FIELD_TRIALS:
         loc_data = [d for d in data if d.location_id == trial]
         by_cult = group_by_cultivar(loc_data)
         for cultivar, samples in by_cult.items():
-            key = (cultivar, DROUGHT_ID)
+            key = (trial, cultivar, DROUGHT_ID)            
             results[key] = median([dobj.starch_abs
                                    for dobj in samples])
-            print cultivar, len([dobj.starch_abs
-                                 for dobj in samples])
+            if len(samples) != 2:
+                """ Boehlendorf (4451) & Norika GL (4452) """
+                print 'PROBLEM', trial, cultivar
             
     return results, median_all
 
