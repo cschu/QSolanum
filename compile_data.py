@@ -22,17 +22,21 @@ Day of planting -> Day of weed reduction
 Buetow (5546): no weed reduction, harvest date: Sep 22-23
 Petersgroden (5543): multiple weed reduction on Sep 3, 8, 17
 Schrobenhausen (5539): no weed reduction, harvest date: Sep 26
+
+according to Karin (mail from Feb 1, 2012):
+Buetow, Schrobenhausen: weed reduction date = harvest date - 14d
+Petersgroden: Sep 3
 """
 PLANT_LIFETIMES_2011 = {
     5544: ('2011-04-18', '2011-09-06'),
     5541: ('2011-03-31', '2011-08-14'),
-    5546: ('2011-04-29', '2011-09-22'),
+    5546: ('2011-04-29', '2011-09-08'),
     5519: ('2011-03-31', '2011-08-14'),
     4537: ('2011-03-31', '2011-08-14'),  
     5540: ('2011-04-15', '2011-09-01'),
     5542: ('2011-04-12', '2011-09-27'),
     5543: ('2011-04-19', '2011-09-03'),
-    5539: ('2011-04-11', '2011-09-26'),
+    5539: ('2011-04-11', '2011-09-12'),
     5545: ('2011-04-11', '2011-09-03')
     }
 

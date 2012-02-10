@@ -19,14 +19,14 @@ TABLE = [
     'id INT AUTO_INCREMENT',
     'name VARCHAR(45)', 
     'limsstudyid INT',
-    'condition VARCHAR(45)',
+    '`condition` VARCHAR(45)',
     'created DATETIME',
     'description TEXT',
     'experiment_id INT',
     'plantspparcelle INT',
     'location_id INT',
     'planted DATE',
-    'terminated DATE',
+    '`terminated` DATE',
     'PRIMARY KEY(id)']
 
 columns_d = {

@@ -62,18 +62,17 @@ def main(argv):
             print d.__dict__
 
 
-    """
+    
     results = CD1.compute_starch_rel_controlled(data, 4537)
     write_table(results)
     return None
-
+    
+    """
     results = CD1.compute_starch_rel_dethlingen(data)
     write_table(results)
     return None
-    """
-
     results = CD1.compute_field_trials(data)
     write_table(results[0])
     return None
-
+    """
 if __name__ == '__main__': main(sys.argv[1:])

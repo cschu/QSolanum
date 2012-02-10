@@ -48,27 +48,37 @@ SELECT limsstudyid, id FROM cultures
 
 plant_ids_q = """
 SELECT aliquot, id FROM plants
-"""
+""".strip()
+
+subspecies_q = """
+SELECT limsid, id FROM subspecies
+""".strip()
 
 """ Getters """
 
-def get_cultures():
-    query = the_db.query(cultures_q)
+def _get_table(query, key_key, pk_key='id'):
+    query = the_db.query(query)
     data = the_db.store_result().fetch_row(how=1, maxrows=0)
     #print data
-    return dict([(int(d['limsstudyid']), int(d['id'])) for d in data])
+    rs = dict() 
+    for d in data:
+        cast_key_key = 'None'
+        # lame casting solution
+        if type(d[key_key]) is str: cast_key_key = int(d[key_key])
+        rs[cast_key_key] = int(d[pk_key])
+    return rs
+
+def get_subspecies():
+    return _get_table(subspecies_q, 'limsid')
+
+def get_cultures():
+    return _get_table(cultures_q, 'limsstudyid')
 
 def get_plants():
-    query = the_db.query(plant_ids_q)
-    data = the_db.store_result().fetch_row(how=1, maxrows=0)
-    #print data
-    return dict([(int(d['aliquot']), int(d['id'])) for d in data])
+    return _get_table(plant_ids_q, 'aliquot')
 
 def get_locations():
-    query = the_db.query(location_query)
-    data = the_db.store_result().fetch_row(how=1, maxrows=99)
-    # print data
-    return dict([(int(d['limsid']), int(d['id'])) for d in data])
+    return _get_table(location_query, 'limsid')
 
 def get_values():
     query = the_db.query(value_query)
