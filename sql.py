@@ -7,16 +7,6 @@ import math
 import login
 the_db = login.get_db()
 
-location_query = """
-SELECT id, limsid FROM locations
-""".strip()
-
-def get_locations():
-    query = the_db.query(location_query)
-    data = the_db.store_result().fetch_row(how=1, maxrows=99)
-    # print data
-    return dict([(int(d['limsid']), int(d['id'])) for d in data])
-
 USE_DB = 'USE %s;'
 DROP_TABLE = 'DROP TABLE IF EXISTS %s;'
 CREATE_TABLE = 'CREATE TABLE %s(\n%s\n) ENGINE=InnoDB DEFAULT CHARSET=utf8;' 
@@ -34,6 +24,63 @@ SELECT NULL, %s, %s, subspecies.id, locations.id, %s, %s, '', ''
 FROM subspecies, locations
 WHERE subspecies.limsid = %s AND locations.limsid = %s;
 """.strip()
+
+
+
+""" SQL Queries """
+
+location_query = """
+SELECT id, limsid FROM locations
+""".strip()
+
+value_query = """
+select `values`.id, content, value from `values`
+join i18n on foreign_key = values.id
+where locale = 'en_us'
+and `model` = 'value'
+and attribute = 'Behandlung'
+and field = 'value'
+""".strip()
+
+cultures_q = """
+SELECT limsstudyid, id FROM cultures
+""".strip()
+
+plant_ids_q = """
+SELECT aliquot, id FROM plants
+"""
+
+""" Getters """
+
+def get_cultures():
+    query = the_db.query(cultures_q)
+    data = the_db.store_result().fetch_row(how=1, maxrows=0)
+    #print data
+    return dict([(int(d['limsstudyid']), int(d['id'])) for d in data])
+
+def get_plants():
+    query = the_db.query(plant_ids_q)
+    data = the_db.store_result().fetch_row(how=1, maxrows=0)
+    #print data
+    return dict([(int(d['aliquot']), int(d['id'])) for d in data])
+
+def get_locations():
+    query = the_db.query(location_query)
+    data = the_db.store_result().fetch_row(how=1, maxrows=99)
+    # print data
+    return dict([(int(d['limsid']), int(d['id'])) for d in data])
+
+def get_values():
+    query = the_db.query(value_query)
+    data = the_db.store_result().fetch_row(how=1, maxrows=200)
+    id_of = dict()
+    for d in data:
+        id_of[str(d['content'])] = int(d['id'])
+        id_of[str(d['value'])]   = int(d['id'])
+    id_of[''] = '0' # add the empty value
+    return id_of
+
+""" Output """
 
 def write_sql_header(db_name, table_name, table, out=sys.stdout):
     out.write('%s\n' % USE_DB % db_name)
@@ -86,7 +133,9 @@ def write_sql_table(data, columns_d, table_name='DUMMY', out=sys.stdout):
     write_standard_sql_table(prepare_sql_table(data, columns_d),
                              table_name=table_name, out=out)
     pass
-    
+  
+def write_update_sql(): pass
+  
 
 ###
 def main(argv):
