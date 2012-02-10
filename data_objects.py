@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import re
 import os
 import sys
 import math
@@ -34,11 +35,20 @@ class StarchData(DataObject):
             self.staerkegehalt_g_kg *= 10.0
         elif self.staerkegehalt_g_kg > max_starch:
             sys.stdout.write(warning % str(self))
+
+        if hasattr(self, 'cultivar') :
+            if self.cultivar.startswith('JA'):
+                self.cultivar = 'JASIA'
+            elif re.match('KOR?MORAN', self.cultivar):
+                self.cultivar = 'KORMORAN'
+                
             
         starch_content = self.staerkegehalt_g_kg
         yield_tuber = self.knollenmasse_kgfw_parzelle
+        nplants = self.plantspparcelle
         self.starch_abs = StarchData.calc_starch_abs(starch_content,
-                                                     yield_tuber)
+                                                     yield_tuber,
+                                                     nplants=nplants)
         pass        
 
     @staticmethod
