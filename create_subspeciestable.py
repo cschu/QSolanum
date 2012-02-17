@@ -19,6 +19,7 @@ TABLE = [
     'cultivar VARCHAR(45)',
     'breeder VARCHAR(45)',
     'reifegruppe VARCHAR(10)',
+    'reifegrclass INT',
     'krautfl INT',
     'verwendung VARCHAR(10)',
     'PRIMARY KEY(id)']
@@ -28,8 +29,9 @@ columns_d = {'LIMS_Subspecies_id': (0, 'limsid', int),
              'SORTE': (2, 'cultivar', str),
              'ZUECHTER': (3, 'breeder', str),
              'REIFEGRP': (4, 'reifegruppe', str),
-             'KRAUTFL': (5, 'krautfl', int),
-             'Verwendung': (6, 'verwendung', str)}
+             'Reifegrclass': (5, 'reifegrclass', int),
+             'KRAUTFL': (6, 'krautfl', int),
+             'Verwendung': (7, 'verwendung', str)}
 
 def annotate_locations(data):
     locations = sql.get_locations()
@@ -48,7 +50,7 @@ def main(argv):
     
     sql.write_sql_header(DB_NAME, TABLE_NAME, TABLE)
     dir_name = argv[0]
-    fn = '%s/%s' % (dir_name, 'TROSTSorten2012.xls')
+    fn = '%s/%s' % (dir_name, 'TROSTSorten20120217.xls')
     data, headers  = p_xls.read_xls_data(fn)
     for dobj in data:
         dobj.species = DEFAULT_POTATO_ID
