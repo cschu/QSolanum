@@ -78,14 +78,25 @@ def compute_starch_rel_ctrl(data, location, drought_ids):
 #
 def compute_starch_rel_field(data, trials, drought_id):
     results = {}    
-    median_all = median([dobj.starch_abs for dobj in data])
+    # median_all = median([dobj.starch_abs for dobj in data])
+
+    by_cult = group_by(data, 'sub_id')
+    median_yields = dict([(k, median([dobj.starch_abs for dobj in by_cult[k]]))
+                          for k in by_cult])
+    # print median_yields
+    # sys.exit(1)
     for trial in trials:
         loc_data = [d for d in data if d.location_id == trial]
         by_cult = group_by(loc_data, 'sub_id')
         for cultivar, samples in by_cult.items():
             key = (trial, int(cultivar), drought_id)            
-            rel_starch = median([dobj.starch_abs/median_all
+            """
+            rel_starch = median([dobj.starch_abs/median_yields[cultivar]
                                  for dobj in samples])
+            """
+            rel_starch = median([dobj.starch_abs for dobj in samples])
+            rel_starch /= median_yields[cultivar]
+
             results[key] = DO.CompiledData()
             results[key].eat_starch_data(samples[0])
             results[key].rel_starch = rel_starch
@@ -97,36 +108,10 @@ def compute_starch_rel_field(data, trials, drought_id):
                 """
                 print 'PROBLEM', trial, cultivar
     
-    results['median_all'] = median_all
+    # results['median_all'] = median_all
     return results
 
-    
-
-
-
-starch_query= """
-SELECT starch_yield.id, staerkegehalt_g_kg, knollenmasse_kgfw_parzelle, pflanzen_parzelle, locations.limsid as location_id, cultivar, treatments.id, value_id as treatment
-FROM treatments 
-INNER JOIN (starch_yield 
-INNER JOIN locations ON locations.id = starch_yield.location_id) 
-ON treatments.aliquotid = starch_yield.aliquotid
-""".strip()
-
-
-
-climate_query = """
-SELECT rainfall, tmin, tmax, locations.limsid, locations.id
-FROM temps
-LEFT JOIN (locations)
-ON (locations.id = temps.location_id)
-ORDER BY locations.limsid
-""".strip()
-
-
-
-
 ###
-# TODO: keep computation within plant life period!
 def compute_heat_summation(data):
     """
     What happens when there are differences in the 
@@ -150,6 +135,7 @@ def compute_heat_summation(data):
 
 ###
 def main(argv):
+    """
     the_db.query(climate_query)
     data = the_db.store_result().fetch_row(how=1, maxrows=999999)
 
@@ -160,21 +146,21 @@ def main(argv):
     print 'lims_loc\tloc\theat_sum\t#temps\n'
     for k, v in compute_heat_summation(data).items():
         print '%i\t%i\t%.3f\t%i' % (k + v), v[0]/v[1]
-    
+    """
+    return None
 
 ###
 def main_starch(argv):
+    """
     the_db.query(starch_query)
     data = the_db.store_result().fetch_row(how=1, maxrows=999999)
     
     data = [DO.StarchData(d.keys(), d.values()) for d in data]
-    """ TODO: global plants/parcelle! """
-
     # print compute_starch_rel_controlled(data, 4537)    
     # print compute_starch_rel_dethlingen(data)
     
     print compute_field_trials(data)
-
+    """
     return None
 
 if __name__ == '__main__': main_starch(sys.argv[1:])
