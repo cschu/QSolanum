@@ -15,30 +15,10 @@ CONTROLLED_TRIALS = [4537, 5506]
 FIELD_TRIALS = [5544, 5541, 5546, 5540, 5542, 5543, 5539, 5545]
 DETHLINGEN_TRIALS = [5519]
 
-"""
-Heat summation periods
-Day of planting -> Day of weed reduction
+DROUGHT_ID = 170
+DETHLINGEN_DROUGHT_IDS = (170, 172)
+CONTROL_IDS = (169, 171)
 
-Buetow (5546): no weed reduction, harvest date: Sep 22-23
-Petersgroden (5543): multiple weed reduction on Sep 3, 8, 17
-Schrobenhausen (5539): no weed reduction, harvest date: Sep 26
-
-according to Karin (mail from Feb 1, 2012):
-Buetow, Schrobenhausen: weed reduction date = harvest date - 14d
-Petersgroden: Sep 3
-"""
-PLANT_LIFETIMES_2011 = {
-    5544: ('2011-04-18', '2011-09-06'),
-    5541: ('2011-03-31', '2011-08-14'),
-    5546: ('2011-04-29', '2011-09-08'),
-    5519: ('2011-03-31', '2011-08-14'),
-    4537: ('2011-03-31', '2011-08-14'),  
-    5540: ('2011-04-15', '2011-09-01'),
-    5542: ('2011-04-12', '2011-09-27'),
-    5543: ('2011-04-19', '2011-09-03'),
-    5539: ('2011-04-11', '2011-09-12'),
-    5545: ('2011-04-11', '2011-09-03')
-    }
 
 
 
@@ -51,6 +31,20 @@ def group_by_cultivar(data):
     return grouped
 
 #
+def group_by(data, field):
+    grouped = {}
+    for dobj in data:
+        try:
+            key = getattr(dobj, field)
+        except:
+            sys.stderr.write('Group by: Missing field!\n')
+            sys.exit(1)
+        # key = dobj.sub_id
+        grouped[key] = grouped.get(key, []) + [dobj]
+    return grouped
+
+
+#
 def median(v):
     # print v
     v_sorted = sorted(v)
@@ -59,68 +53,52 @@ def median(v):
         return (v_sorted[n/2-1] + v_sorted[n/2])/2.0
     else:
         return v_sorted[n/2]
-#
 
+#
 def is_control(treatment):
-    return treatment in [169, 171]
+    return treatment in CONTROL_IDS
 
-DROUGHT_ID = 170
-DETHLINGEN_DROUGHT_IDS = (170, 172)
 #
-def compute_starch_rel_controlled(data, location):
-    """ GOLM/JKI """
+def compute_starch_rel_ctrl(data, location, drought_ids):
     results = {}
-    loc_data = [d for d in data if d.location_id == location]
-    by_cult = group_by_cultivar(loc_data)
-    for cultivar, samples in by_cult.items():
-        ctrl_yield = median([dobj.starch_abs 
+    for cultivar, samples in data.items():
+        ctrl_yield = median([dobj.starch_abs
                              for dobj in samples
                              if is_control(dobj.treatment)])
-        key = (location, cultivar, DROUGHT_ID)
-        results[key] = median([dobj.starch_abs/ctrl_yield
-                               for dobj in samples
-                               if not is_control(dobj.treatment)])       
+        for trmt in drought_ids:
+            key = (location, int(cultivar), trmt)
+            rel_starch = median([dobj.starch_abs/ctrl_yield
+                                 for dobj in samples
+                                 if dobj.treatment == trmt])
+            results[key] = DO.CompiledData()
+            results[key].eat_starch_data(samples[0])
+            results[key].rel_starch = rel_starch
     return results
 
 #
-def compute_starch_rel_dethlingen(data):
-    """ Dethlingen """    
-    results = {}
-    loc_data = [d for d in data if d.location_id == 5519]
-    by_cult = group_by_cultivar(loc_data)
-    for cultivar, samples in by_cult.items():
-        ctrl_yield = median([dobj.starch_abs 
-                             for dobj in samples
-                             if is_control(dobj.treatment)])
-        for trmt in DETHLINGEN_DROUGHT_IDS:
-            key = (5519, cultivar, trmt)
-            results[key] = median([dobj.starch_abs/ctrl_yield
-                                   for dobj in samples
-                                   if dobj.treatment == trmt])       
-    return results
-
-
-
-#
-def compute_field_trials(data):
+def compute_starch_rel_field(data, trials, drought_id):
     results = {}    
-
-    print set([dobj.location_id for dobj in data])
-
-    median_all = median([dobj.starch_abs for dobj in data                      
-                         if dobj.location_id in FIELD_TRIALS])
-    for trial in FIELD_TRIALS:
+    median_all = median([dobj.starch_abs for dobj in data])
+    for trial in trials:
         loc_data = [d for d in data if d.location_id == trial]
-        by_cult = group_by_cultivar(loc_data)
+        by_cult = group_by(loc_data, 'sub_id')
         for cultivar, samples in by_cult.items():
-            key = (trial, cultivar, DROUGHT_ID)            
-            results[key] = median([dobj.starch_abs
-                                   for dobj in samples])
+            key = (trial, int(cultivar), drought_id)            
+            rel_starch = median([dobj.starch_abs/median_all
+                                 for dobj in samples])
+            results[key] = DO.CompiledData()
+            results[key].eat_starch_data(samples[0])
+            results[key].rel_starch = rel_starch
+
             if len(samples) != 2:
-                """ Boehlendorf (4451) & Norika GL (4452) """
+                """ 
+                Boehlendorf (4451) & Norika GL (4452) 
+                should be solved.
+                """
                 print 'PROBLEM', trial, cultivar
-            
-    return results, median_all
+    
+    results['median_all'] = median_all
+    return results
 
     
 
@@ -160,7 +138,8 @@ def compute_heat_summation(data):
         if dobj.heat_sum is None:
             continue
             
-        key = tuple(map(int, (dobj.limsid, dobj.id)))
+        # key = tuple(map(int, (dobj.limsid, dobj.id)))
+        key = int(dobj.limsid)
         heat_d[key] = heat_d.get(key, []) + [dobj.heat_sum]
         
     for k in heat_d:

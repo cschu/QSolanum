@@ -21,6 +21,22 @@ class DataObject(object):
         return str(self.__dict__)
     pass
 
+#
+class CompiledData(DataObject):
+    def eat_starch_data(self, dobj):
+        self.plantspparcelle = dobj.plantspparcelle
+        self.planted = dobj.planted
+        self.terminated = dobj.terminated
+        self.cultivar = dobj.cultivar
+        self.breeder = dobj.breeder
+        self.reifegruppe = dobj.reifegruppe
+        pass
+    pass
+        
+        
+        
+        
+
 # 
 class StarchData(DataObject):    
 

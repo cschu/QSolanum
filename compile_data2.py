@@ -8,43 +8,22 @@ import login
 the_db = login.get_db()
 
 import data_objects as DO
-
 import compile_data as CD1
+import queries
+
+import write_table as WT
 
 CONTROLLED_TRIALS = [4537, 5506]
 FIELD_TRIALS = [5544, 5541, 5546, 5540, 5542, 5543, 5539, 5545]
 DETHLINGEN_TRIALS = [5519]
 
-starch_query = """
-SELECT
-starch_yield.name,
-starch_yield.id as yield_id, 
-staerkegehalt_g_kg, 
-knollenmasse_kgfw_parzelle, 
-cultures.plantspparcelle, 
-locations.limsid as location_id, 
-cultures.id as culture_id, 
-cultures.name as culture_name, 
-subspecies.cultivar as cultivar,
-subspecies.id as sub_id,
-treatments.id as treatment_id, 
-value_id as treatment, 
-plants.aliquot as plant_aliquot,
-plants.subspecies_id as psub_id
-FROM starch_yield, locations, cultures, treatments, plants, subspecies
-WHERE locations.id = starch_yield.location_id
-AND treatments.aliquotid = starch_yield.aliquotid
-AND plants.aliquot = starch_yield.aliquotid
-AND plants.subspecies_id = subspecies.id
-AND cultures.id = plants.culture_id
-""".strip()
-
-def write_table(data, out=sys.stdout):
+def write_table_f(data, out=sys.stdout):
     by_loc = {}
     for k, v in data.items():
         by_loc[k[0]] = by_loc.get(k[0], []) + [k[1:] + (v,)]
-    print by_loc
-
+    # print 5541, sorted(by_loc[5541])
+    # print 5542, sorted(by_loc[5542])
+    # return None
     for k, rows in sorted(by_loc.items()):
         for row in rows:
             out.write('%i,%s,%i,%.5f\n' % ((k,) + row))
@@ -53,26 +32,71 @@ def write_table(data, out=sys.stdout):
 
 ###
 def main(argv):
-    the_db.query(starch_query)
+    
+    """ 
+    Climate data
+    """
+    
+    the_db.query(queries.climate_query)
+    climate_data = the_db.store_result().fetch_row(how=1, maxrows=0)
+    climate_data = [DO.ClimateData(d.keys(), d.values()) 
+                    for d in climate_data]
+    heat_d = CD1.compute_heat_summation(climate_data)
+    # print heat_d
+    
+
+    
+    # return None
+    the_db.query(queries.starch_query)
     data = the_db.store_result().fetch_row(how=1, maxrows=9999999)
 
     data = [DO.StarchData(d.keys(), d.values()) for d in data]
-    for d in data:
-        if int(d.location_id) == 4537:
-            print d.__dict__
 
-
+    golm_data = CD1.group_by([d for d in data if d.location_id == 4537],
+                             'sub_id')
+    dethl_data = CD1.group_by([d for d in data if d.location_id == 5519],
+                              'sub_id')
+    field_data = [d for d in data if d.location_id in FIELD_TRIALS]
     
+    golm_results = CD1.compute_starch_rel_ctrl(golm_data, 4537, 
+                                               [CD1.DROUGHT_ID])
+    dethl_results = CD1.compute_starch_rel_ctrl(dethl_data, 5519,
+                                                CD1.DETHLINGEN_DROUGHT_IDS)
+    field_results = CD1.compute_starch_rel_field(field_data,
+                                                 FIELD_TRIALS, CD1.DROUGHT_ID)
+    # print field_results
+
+
+    compiled = {}
+    # compiled.update(golm_results)
+    # compiled.update(dethl_results)
+    compiled.update(field_results)
+    for k, v in sorted(compiled.items()):
+        if isinstance(k, str): continue
+        # print k
+        compiled[k].heat_sum, compiled[k].heat_nmeasures = heat_d[k[0]]
+        compiled[k].limsloc = k[0]
+        # print v
+    # print heat_d
+    
+    WT.write_table(compiled, WT.FIELDS)
+
+    return None
+    
+    """
     results = CD1.compute_starch_rel_controlled(data, 4537)
     write_table(results)
-    return None
+    # return None
     
-    """
+    
     results = CD1.compute_starch_rel_dethlingen(data)
     write_table(results)
-    return None
-    results = CD1.compute_field_trials(data)
-    write_table(results[0])
-    return None
+    # return None
     """
+
+
+    # results = CD1.compute_field_trials(data)
+    # write_table(results[0])
+    # return None
+    
 if __name__ == '__main__': main(sys.argv[1:])
