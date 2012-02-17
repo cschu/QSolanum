@@ -54,7 +54,21 @@ subspecies_q = """
 SELECT limsid, id FROM subspecies
 """.strip()
 
-""" Getters """
+missing_plants_q = """
+select aliquotid from starch_yield where aliquotid not in (select 
+aliquotid from starch_yield, plants where location_id=%s AND 
+aliquotid=plants.aliquot order by cultivar) AND location_id=%s;
+""".strip()
+
+get_value_id_q = """
+SELECT id FROM `values` WHERE value=%s;
+""".strip()
+
+def get_missing_plants(location_id):
+    q    = the_db.query(missing_plants_q % (location_id, location_id))
+    data = the_db.store_result().fetch_row(how=0, maxrows=0)
+    rs   = [d[0] for d in data]
+    return rs
 
 def _get_table(query, key_key, pk_key='id'):
     query = the_db.query(query)
@@ -90,6 +104,16 @@ def get_values():
     id_of[''] = '0' # add the empty value
     return id_of
 
+def get_value_id(value):
+    c = the_db.cursor()
+    c.execute(get_value_id_q, (value,))
+    data = c.fetchall()
+    if len(data) > 0:
+        if len(data[0]) > 0:
+            return data[0][0]
+    return None
+
+
 """ Output """
 
 def write_sql_header(db_name, table_name, table, out=sys.stdout):
@@ -110,14 +134,18 @@ def format_entry(entry):
     # return '(%s)' % ','.join(map(str, formatted))
     return formatted
 
-    
-
 def prepare_sql_table(data, columns_d):
     rows = []
     for dobj in data:
         row = []
         for key, val in columns_d.items():
             if hasattr(dobj, key) and getattr(dobj, key) != '':
+#                if len(val) == 4: # ok, it has a lookup function for the value, so use it
+#                    if val[3] == 'custom':
+#                        val = val[:3]
+#                    else:
+#                        print locals()[ val[3] ]( getattr(dobj, key) )
+#                        val = val[:3] + locals()[ val[3] ]( getattr(dobj, key) )
                 row.append(val + (getattr(dobj, key),))
             else:
                 row.append(val[:-1] + (str, 'NULL'))
