@@ -31,6 +31,7 @@ class CompiledData(DataObject):
         self.breeder = dobj.breeder
         self.reifegruppe = dobj.reifegruppe
         self.sub_id = int(dobj.sub_id)
+        self.sub_limsid = int(dobj.sub_limsid)
         pass
     pass
         

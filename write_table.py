@@ -7,7 +7,7 @@ import math
 FIELDS = {
     'Location': (0, 'limsloc'),
     'Cultivar': (1, 'cultivar'),
-    'Cultivar_ID': (1.1, 'sub_id'),
+    'Cultivar_ID': (1.1, 'sub_limsid'),
     'Starch_Yield_Plant_rel': (2, 'rel_starch'),
     'Plants_Parcelle': (3, 'plantspparcelle'),
     'Planting_Date': (4, 'planted'),
