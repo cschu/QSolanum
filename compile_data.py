@@ -112,25 +112,33 @@ def compute_starch_rel_field(data, trials, drought_id):
     return results
 
 ###
-def compute_heat_summation(data):
+def compute_climate_data(data):
     """
+    Heat summation and sum of precipitation/irrigation.
     What happens when there are differences in the 
     number of temperature measurements for the individual
     locations? 
     """
     heat_d = {}
+    h2o_d = {}
     for dobj in data:
-        if dobj.heat_sum is None:
-            continue
-            
         # key = tuple(map(int, (dobj.limsid, dobj.id)))
         key = int(dobj.limsid)
-        heat_d[key] = heat_d.get(key, []) + [dobj.heat_sum]
+        if dobj.heat_sum is None:
+            pass
+        else:            
+            heat_d[key] = heat_d.get(key, []) + [dobj.heat_sum]
+        if dobj.precipitation is None:
+            pass
+        else:
+            h2o_d[key] = h2o_d.get(key, []) + [dobj.precipitation]
         
     for k in heat_d:
         # print k, heat_d[k]
         heat_d[k] = (sum(heat_d[k]), len(heat_d[k]))
-    return heat_d
+    for k in h2o_d:
+        h2o_d[k] = (sum(h2o_d[k]), len(h2o_d[k]))
+    return heat_d, h2o_d
 
 
 ###

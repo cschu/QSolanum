@@ -7,12 +7,15 @@ import math
 FIELDS = {
     'Location': (0, 'limsloc'),
     'Cultivar': (1, 'cultivar'),
+    'Cultivar_ID': (1.1, 'sub_id'),
     'Starch_Yield_Plant_rel': (2, 'rel_starch'),
     'Plants_Parcelle': (3, 'plantspparcelle'),
     'Planting_Date': (4, 'planted'),
     'Weed_Reduction_Date': (5, 'terminated'),
     'Heat_Summation': (6, 'heat_sum'),
-    '#Climate_Measurements': (7, 'heat_nmeasures'),
+    '#Temp_Measurements': (7, 'heat_nmeasures'),
+    'Precipitation': (7.1, 'precipitation'),
+    '#Prec_Measurements': (7.2, 'prec_nmeasures'),
     'Reifegruppe': (8, 'reifegruppe'),
     'Breeder': (9, 'breeder')
     }

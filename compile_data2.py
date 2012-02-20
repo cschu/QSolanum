@@ -41,7 +41,7 @@ def main(argv):
     climate_data = the_db.store_result().fetch_row(how=1, maxrows=0)
     climate_data = [DO.ClimateData(d.keys(), d.values()) 
                     for d in climate_data]
-    heat_d = CD1.compute_heat_summation(climate_data)
+    heat_d, h2o_d = CD1.compute_climate_data(climate_data)
     # print heat_d
     
 
@@ -76,6 +76,7 @@ def main(argv):
         # print k
         compiled[k].heat_sum, compiled[k].heat_nmeasures = heat_d[k[0]]
         compiled[k].limsloc = k[0]
+        compiled[k].precipitation, compiled[k].prec_nmeasures = h2o_d[k[0]]
         # print v
     # print heat_d
     

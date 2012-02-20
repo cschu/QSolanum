@@ -30,6 +30,7 @@ class CompiledData(DataObject):
         self.cultivar = dobj.cultivar
         self.breeder = dobj.breeder
         self.reifegruppe = dobj.reifegruppe
+        self.sub_id = int(dobj.sub_id)
         pass
     pass
         
