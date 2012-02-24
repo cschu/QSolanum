@@ -17,7 +17,10 @@ FIELDS = {
     'Precipitation': (7.1, 'precipitation'),
     '#Prec_Measurements': (7.2, 'prec_nmeasures'),
     'Reifegruppe': (8, 'reifegruppe'),
-    'Breeder': (9, 'breeder')
+    'Breeder': (9, 'breeder'),
+    'Elevation': (10, 'elevation'),
+    'Longitude': (11, 'longitude_e'),
+    'Latitude': (12, 'latitude_n')
     }
 
 

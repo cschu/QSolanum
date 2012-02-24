@@ -32,6 +32,9 @@ class CompiledData(DataObject):
         self.reifegruppe = dobj.reifegruppe
         self.sub_id = int(dobj.sub_id)
         self.sub_limsid = int(dobj.sub_limsid)
+        self.elevation = dobj.elevation
+        self.longitude_e = dobj.longitude_e
+        self.latitude_n = dobj.latitude_n
         pass
     pass
         
@@ -53,13 +56,13 @@ class StarchData(DataObject):
             self.staerkegehalt_g_kg *= 10.0
         elif self.staerkegehalt_g_kg > max_starch:
             sys.stdout.write(warning % str(self))
-
-        if hasattr(self, 'cultivar') :
+        """
+        if hasattr(self, 'cultivar'):
             if self.cultivar.startswith('JA'):
                 self.cultivar = 'JASIA'
             elif re.match('KOR?MORAN', self.cultivar):
                 self.cultivar = 'KORMORAN'
-                
+        """     
             
         starch_content = self.staerkegehalt_g_kg
         yield_tuber = self.knollenmasse_kgfw_parzelle

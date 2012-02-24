@@ -15,7 +15,7 @@ YIELD_TABLE = [
     'name VARCHAR(45)',
     'aliquotid INT NOT NULL',
     'parzellennr INT',
-    'locationid INT NOT NULL',
+    'location_id INT NOT NULL',
     'cultivar VARCHAR(45)',
     'pflanzen_parzelle INT',
     'knollenmasse_kgfw_parzelle DOUBLE NOT NULL',
@@ -48,6 +48,9 @@ default_values = {
 
 def annotate_locations(data):
     locations = sql.get_locations()
+    """ Temp solution """
+    locations[6019.0] = 12
+    locations[6020.0] = 13
     for dobj in data:
         dobj.Standort = locations[dobj.Standort]
     return data
