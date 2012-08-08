@@ -1,3 +1,4 @@
+
 #!/usr/bin/python
 
 import os
@@ -56,7 +57,7 @@ def median(v):
 
 #
 def is_control(treatment):
-    return treatment in CONTROL_IDS
+    return int(treatment) in CONTROL_IDS
 
 #
 def compute_starch_rel_ctrl(data, location, drought_ids):
@@ -73,6 +74,7 @@ def compute_starch_rel_ctrl(data, location, drought_ids):
             results[key] = DO.CompiledData()
             results[key].eat_starch_data(samples[0])
             results[key].rel_starch = rel_starch
+            results[key].treatment = int(trmt)
     return results
 
 #
@@ -100,7 +102,7 @@ def compute_starch_rel_field(data, trials, drought_id):
             results[key] = DO.CompiledData()
             results[key].eat_starch_data(samples[0])
             results[key].rel_starch = rel_starch
-
+            results[key].treatment = drought_id
             if len(samples) != 2:
                 """ 
                 Boehlendorf (4451) & Norika GL (4452) 
@@ -131,7 +133,9 @@ def compute_climate_data(data):
         if dobj.precipitation is None:
             pass
         else:
-            h2o_d[key] = h2o_d.get(key, []) + [dobj.precipitation]
+            # dobj.irrigation = 0
+            h2o_d[key] = h2o_d.get(key, []) + [dobj.precipitation + \
+                                                   dobj.irrigation]
         
     for k in heat_d:
         # print k, heat_d[k]

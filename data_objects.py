@@ -35,6 +35,8 @@ class CompiledData(DataObject):
         self.elevation = dobj.elevation
         self.longitude_e = dobj.longitude_e
         self.latitude_n = dobj.latitude_n
+        self.knollenmasse_kgfw_parzelle = dobj.knollenmasse_kgfw_parzelle
+        # self.treatment = int(dobj.treatment)
         pass
     pass
         

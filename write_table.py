@@ -17,10 +17,12 @@ FIELDS = {
     'Precipitation': (7.1, 'precipitation'),
     '#Prec_Measurements': (7.2, 'prec_nmeasures'),
     'Reifegruppe': (8, 'reifegruppe'),
+    'Treatment': (8.1, 'treatment'),
     'Breeder': (9, 'breeder'),
     'Elevation': (10, 'elevation'),
     'Longitude': (11, 'longitude_e'),
-    'Latitude': (12, 'latitude_n')
+    'Latitude': (12, 'latitude_n'),
+    'Tuber_Yield_Abs': (13, 'knollenmasse_kgfw_parzelle')
     }
 
 
