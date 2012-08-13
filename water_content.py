@@ -7,7 +7,7 @@ Created on Aug 10, 2012
 '''
 
 import sys
-
+import datetime
 
 import login
 TROST_DB = login.get_db()
@@ -39,7 +39,28 @@ FIELDS = ['pheno_id', 'pv_number', 'value_id', 'value', 'sample_id', 'date', 'ti
 
 
 def compute_stuff(data):
-    pass            
+    for key, val in data.items():
+        print key 
+        print '\n'.join(map(str, [item 
+                                  for item in val 
+                                  if item['value_id'] == 55]))
+
+        pass
+    return None            
+
+def find_next_pos(data, field, value, start=0):
+    for i in xrange(start, len(data)):
+        if data[i][field] == value:
+            return i
+    return -1
+
+def find_all_pos(data, field, value):
+    return [i for i, item in enumerate(data)
+            if item[field] == value]
+
+def compute_stuff(data):
+    for item in find_all_pos(data, 'value_id', 55):
+        
 
 def main(argv):
     
@@ -50,19 +71,19 @@ def main(argv):
         row_d = dict(zip(FIELDS, row))
         data[row_d['sample_id']] = data.get(row_d['sample_id'], []) + [row_d]
         
+    print len(data)
+    for key in data.keys():
+        if len(data[key]) == 1:
+            del data[key]
+        else:
+            data[key] = sorted(data[key], key=lambda x:x['date'])
+            print '\n'.join(map(str, data[key]))
+            break
+    print len(data)
         
+    # result = compute_stuff(data)    
+    
         
-        
-    
-    # print data[0]
-    
-    #data_d = {}
-    #for 
-    #print data.items()[:4]
-    for item in data.items():
-        if len(item[1]) > 1:
-            print item
-    
     """
     fw_data = [row for row in data if row['value_id'] == 55]
     sw_data = [row for row in data if row['value_id'] == 156]
