@@ -38,12 +38,52 @@ entities.id in (366,12);
 FIELDS = ['pheno_id', 'pv_number', 'value_id', 'value', 'sample_id', 'date', 'time', 'entity_id']
 
 
+WATER_CONTENTS_QUERY = """
+SELECT
+P1.sample_id AS sample_id,
+P1.id AS p1_id, P1.date AS p1_date,
+PV1.*, PE1.entity_id AS pe1_entity_id,
+P2.id AS p2_id, P2.date AS p2_date,
+PV2.*, PE2.entity_id AS pe2_entity_id
+FROM
+phenotypes AS P1
+LEFT JOIN phenotypes AS P2
+ON P1.sample_id = P2.sample_id
+LEFT JOIN phenotype_values AS PV1
+ON P1.id = PV1.phenotype_id
+LEFT JOIN phenotype_values AS PV2
+ON P2.id = PV2.phenotype_id
+LEFT JOIN phenotype_entities AS PE1
+ON P1.id = PE1.phenotype_id
+LEFT JOIN phenotype_entities AS PE2
+ON P2.id = PE2.phenotype_id
+WHERE
+P1.id != P2.id AND
+P1.object = 'LIMS-Aliquot' AND P2.object = 'LIMS-Aliquot' AND
+PV1.value_id IN  (55,156,69,163,164) AND
+PV2.value_id IN  (55,156,69,163,164) AND
+PV1.value_id != PV2.value_id AND
+(PV1.value_id = 55 OR (PV1.value_id = 69 AND PV2.value_id != 55))
+ORDER BY sample_id, P1.date, P2.date;
+""".strip().replace('\n', ' ')
+
+FIELDS = ['sample_id', 'p1_id', 'p1_date', 
+          'pv1_id', 'pv1_value_id', 'pv1_phenotype_id', 'pv1_number', 'pe1_entity_id',
+          'pv2_id', 'pv2_value_id', 'pv2_phenotype_id', 'pv2_number', 'pe2_entity_id']
+
+
 def compute_stuff(data):
     pass            
 
 def main(argv):
     
     C.execute(WATER_CONTENTS_QUERY)
+    
+    fo = open('water_contents.csv', 'w')
+    fo.write(';'.join(FIELDS))
+    for row in C.fetchall():
+        fo.write(';'.join(map(str, row)))
+    fo.close()
     
     data = {}
     for row in C.fetchall():
