@@ -94,7 +94,8 @@ def find_all_pos(data, field, value):
 
 def compute_stuff(data):
     for item in find_all_pos(data, 'value_id', 55):
-        
+        pass
+    pass
 
 def main(argv):
     
@@ -103,9 +104,10 @@ def main(argv):
     fo = open('water_contents.csv', 'w')
     fo.write(';'.join(FIELDS))
     for row in C.fetchall():
-        fo.write(';'.join(map(str, row)))
+        fo.write('%s\n' % (';'.join(map(str, row))))
     fo.close()
-    
+    return None
+
     data = {}
     for row in C.fetchall():
         row_d = dict(zip(FIELDS, row))
