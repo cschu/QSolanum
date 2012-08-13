@@ -72,8 +72,41 @@ FIELDS = ['sample_id', 'p1_id', 'p1_date',
           'p2_id', 'p2_date',
           'pv2_id', 'pv2_value_id', 'pv2_phenotype_id', 'pv2_number', 'pe2_entity_id']
 
+def compute_rwc(data):
+    candidate_69 = None
+    candidate_156 = None
+    for row in sorted(data, key=lambda x:x['delta_t']):
+        if row['pv2_id'] == 69 and row['delta_t'] >= 2 and row['delta_t'] <= 7:
+            if candidate_69 is None:
+                candidate_69 = row
+            else:
+                print 'Duplicate value (69):'
+                print 'Original:', candidate_69
+                print 'Duplicate:', row
+        elif row['pv2_id'] == 156 and row['delta_t'] >= 1 and row['delta_t'] <= 2:
+            if candidate_156 is None:
+                candidate_156 = row
+            else:
+                print 'Duplicate value (156):'
+                print 'Original:', candidate_156
+                print 'Duplicate:', row
+        pass
+    """
+    if len(candidates_69) > 1:
+        print 'Duplicate 69', 
+        candidates_69 = sorted(candidates_69, key=lambda x:x['delta_t'])
+    if len(candidates_156) > 1:
+        candidates_156 = sorted(candidates_156, key=lambda x:x['delta_t'])
+    """
+    return None
 
 def compute_stuff(data):
+    #delta_t = []     
+    for i, row in enumerate(data):         
+        data[i]['delta_t'] = row['p2_date'] - row['p1_date']
+    data_55 = [row for row in data if row['pv1_id'] == 55 and row['delta_t'] > 0]
+    compute_rwc(data_55)
+    
     pass            
 
 def main(argv):
