@@ -69,6 +69,7 @@ ORDER BY sample_id, P1.date, P2.date;
 
 FIELDS = ['sample_id', 'p1_id', 'p1_date', 
           'pv1_id', 'pv1_value_id', 'pv1_phenotype_id', 'pv1_number', 'pe1_entity_id',
+          'p2_id', 'p2_date',
           'pv2_id', 'pv2_value_id', 'pv2_phenotype_id', 'pv2_number', 'pe2_entity_id']
 
 
@@ -102,7 +103,8 @@ def main(argv):
     C.execute(WATER_CONTENTS_QUERY)
     
     fo = open('water_contents.csv', 'w')
-    fo.write(';'.join(FIELDS))
+    fo.write('%s\n' % (';'.join(FIELDS)))
+    fo.write('thing\n')
     for row in C.fetchall():
         fo.write('%s\n' % (';'.join(map(str, row))))
     fo.close()
@@ -112,16 +114,13 @@ def main(argv):
     for row in C.fetchall():
         row_d = dict(zip(FIELDS, row))
         data[row_d['sample_id']] = data.get(row_d['sample_id'], []) + [row_d]
-        
-    print len(data)
-    for key in data.keys():
+    for key in data:
         if len(data[key]) == 1:
             del data[key]
         else:
-            data[key] = sorted(data[key], key=lambda x:x['date'])
-            print '\n'.join(map(str, data[key]))
-            break
-    print len(data)
+            compute_stuff(data[key])
+        pass      
+
         
     # result = compute_stuff(data)    
     
