@@ -72,31 +72,43 @@ FIELDS = ['sample_id', 'p1_id', 'p1_date',
           'p2_id', 'p2_date',
           'pv2_id', 'pv2_value_id', 'pv2_phenotype_id', 'pv2_number', 'pe2_entity_id']
 
+def compute_rwc(data):
+    candidate_69 = None
+    candidate_156 = None
+    for row in sorted(data, key=lambda x:x['delta_t']):
+        if row['pv2_id'] == 69 and row['delta_t'] >= 2 and row['delta_t'] <= 7:
+            if candidate_69 is None:
+                candidate_69 = row
+            else:
+                print 'Duplicate value (69):'
+                print 'Original:', candidate_69
+                print 'Duplicate:', row
+        elif row['pv2_id'] == 156 and row['delta_t'] >= 1 and row['delta_t'] <= 2:
+            if candidate_156 is None:
+                candidate_156 = row
+            else:
+                print 'Duplicate value (156):'
+                print 'Original:', candidate_156
+                print 'Duplicate:', row
+        pass
+    """
+    if len(candidates_69) > 1:
+        print 'Duplicate 69', 
+        candidates_69 = sorted(candidates_69, key=lambda x:x['delta_t'])
+    if len(candidates_156) > 1:
+        candidates_156 = sorted(candidates_156, key=lambda x:x['delta_t'])
+    """
+    return None
 
 def compute_stuff(data):
-    for key, val in data.items():
-        print key 
-        print '\n'.join(map(str, [item 
-                                  for item in val 
-                                  if item['value_id'] == 55]))
+    #delta_t = []     
+    for i, row in enumerate(data):         
+        data[i]['delta_t'] = row['p2_date'] - row['p1_date']
+    data_55 = [row for row in data if row['pv1_id'] == 55 and row['delta_t'] > 0]
+    compute_rwc(data_55)
+    
+    pass            
 
-        pass
-    return None            
-
-def find_next_pos(data, field, value, start=0):
-    for i in xrange(start, len(data)):
-        if data[i][field] == value:
-            return i
-    return -1
-
-def find_all_pos(data, field, value):
-    return [i for i, item in enumerate(data)
-            if item[field] == value]
-
-def compute_stuff(data):
-    for item in find_all_pos(data, 'value_id', 55):
-        pass
-    pass
 
 def main(argv):
     
