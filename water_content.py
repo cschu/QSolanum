@@ -76,14 +76,15 @@ def compute_rwc(data):
     candidate_69 = None
     candidate_156 = None
     for row in sorted(data, key=lambda x:x['delta_t']):
-        if row['pv2_id'] == 69 and row['delta_t'] >= datetime.timedelta(days=2) and row['delta_t'] <= datetime.timedelta(days=7):
+        # print row
+        if row['pv2_value_id'] == 69 and row['delta_t'] >= datetime.timedelta(days=2) and row['delta_t'] <= datetime.timedelta(days=7):
             if candidate_69 is None:
                 candidate_69 = row
             else:
                 print 'Duplicate value (69):'
                 print 'Original:', candidate_69
                 print 'Duplicate:', row
-        elif row['pv2_id'] == 156 and row['delta_t'] >= datetime.timedelta(days=1) and row['delta_t'] <= datetime.timedelta(days=2):
+        elif row['pv2_value_id'] == 156 and row['delta_t'] >= datetime.timedelta(days=1) and row['delta_t'] <= datetime.timedelta(days=2):
             if candidate_156 is None:
                 candidate_156 = row
             else:
@@ -91,7 +92,8 @@ def compute_rwc(data):
                 print 'Original:', candidate_156
                 print 'Duplicate:', row
         pass
-    print 'CANDIDATES:', candidate_69, candidate_156
+    # if not candidate_69 is None and not candidate_156 is None:
+    #    print 'CANDIDATES:', candidate_69, candidate_156
     """
     if len(candidates_69) > 1:
         print 'Duplicate 69', 
@@ -105,7 +107,8 @@ def compute_stuff(data):
     #delta_t = []     
     for i, row in enumerate(data):         
         data[i]['delta_t'] = row['p2_date'] - row['p1_date']
-    data_55 = [row for row in data if row['pv1_id'] == 55 and row['delta_t'] > 0]
+    data_55 = [row for row in data if row['pv1_value_id'] == 55 and row['delta_t'] > datetime.timedelta(days=0)]
+    # print data_55
     compute_rwc(data_55)
     
     pass            
@@ -125,9 +128,11 @@ def main(argv):
     fo.close()
         
     for key in data:
+        
         if len(data[key]) == 1:
             del data[key]
         else:
+            # print 'ANNOY!'
             compute_stuff(data[key])
         pass      
 
