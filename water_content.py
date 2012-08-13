@@ -121,8 +121,8 @@ def main(argv):
     for row in C.fetchall():
         fo.write('%s\n' % (';'.join(map(str, row))))
     fo.close()
-    return None
-
+    # return None
+    print 'XXX'
     data = {}
     for row in C.fetchall():
         row_d = dict(zip(FIELDS, row))
