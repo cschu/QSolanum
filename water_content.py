@@ -76,14 +76,14 @@ def compute_rwc(data):
     candidate_69 = None
     candidate_156 = None
     for row in sorted(data, key=lambda x:x['delta_t']):
-        if row['pv2_id'] == 69 and row['delta_t'] >= 2 and row['delta_t'] <= 7:
+        if row['pv2_id'] == 69 and row['delta_t'] >= datetime.timedelta(days=2) and row['delta_t'] <= datetime.timedelta(days=7):
             if candidate_69 is None:
                 candidate_69 = row
             else:
                 print 'Duplicate value (69):'
                 print 'Original:', candidate_69
                 print 'Duplicate:', row
-        elif row['pv2_id'] == 156 and row['delta_t'] >= 1 and row['delta_t'] <= 2:
+        elif row['pv2_id'] == 156 and row['delta_t'] >= datetime.timedelta(days=1) and row['delta_t'] <= datetime.timedelta(days=2):
             if candidate_156 is None:
                 candidate_156 = row
             else:
