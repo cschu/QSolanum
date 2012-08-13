@@ -116,14 +116,13 @@ def main(argv):
     
     fo = open('water_contents.csv', 'w')
     fo.write('%s\n' % (';'.join(FIELDS)))
-    for row in C.fetchall():
-        fo.write('%s\n' % (';'.join(map(str, row))))
-    fo.close()
-    
     data = {}
     for row in C.fetchall():
+        fo.write('%s\n' % (';'.join(map(str, row))))
         row_d = dict(zip(FIELDS, row))
         data[row_d['sample_id']] = data.get(row_d['sample_id'], []) + [row_d]
+    fo.close()
+        
     for key in data:
         if len(data[key]) == 1:
             del data[key]
@@ -139,9 +138,9 @@ def main(argv):
     #data_d = {}
     #for 
     #print data.items()[:4]
-    for item in data.items():
-        if len(item[1]) > 1:
-            print item
+    #for item in data.items():
+    #    if len(item[1]) > 1:
+    #        print item
     
     """
     fw_data = [row for row in data if row['value_id'] == 55]
