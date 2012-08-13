@@ -16,6 +16,47 @@ INSERT_SELECT_STR = ''
 insert into plants (id, location_id) select NULL, locations.id from locations where locations.limsid = 1111;
 """
 
+
+""" SQL for inserting stuff into phenotypes/phenotype_values """
+
+# UNUSED
+#MYSQL_PHENOTYPE_VALUES = """
+#INSERT INTO phenotype_values 
+#(id, value_id, phenotype_id, number)
+#SELECT NULL, %i, phenotypes.id, %f
+#FROM phenotypes
+#WHERE phenotypes.sample_id = %i;
+#""".strip()
+
+INSERT_PHENOTYPE = """
+INSERT INTO phenotypes
+(id, version, object, program_id, date, time, sample_id, invalid)
+SELECT NULL, NULL, 'LIMS-Aliquot', 4, '%s', '%s', aliquots.id, NULL
+FROM aliquots
+WHERE aliquots.aliquot = %i;
+""".strip().replace('\n', ' ')
+
+INSERT_PHENOTYPE_VALUE = """
+INSERT INTO phenotype_values
+(id, value_id, phenotype_id, number)
+SELECT NULL, %i, phenotypes.id, %f 
+FROM phenotypes
+WHERE phenotypes.id = %s); 
+""".strip().replace('\n', ' ')
+
+
+#INSERT_PHENOTYPE_VALUE = """
+#INSERT INTO phenotype_values
+#(id, value_id, phenotype_id, number)
+#SELECT NULL, %i, phenotypes.id, %f 
+#FROM phenotypes
+#WHERE phenotypes.id in 
+#(SELECT MAX(phenotypes.id) FROM phenotypes);
+#""".strip().replace('\n', ' ')
+
+
+
+
 INSERT_PLANTS2_STR = """
 INSERT INTO plants2 
 (id, aliquot, name, subspecies_id, location_id, culture_id, sampleid,

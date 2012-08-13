@@ -53,7 +53,7 @@ mysql> select location_id, count(distinct datum) from temps where (invalid is nu
 ###
 def main(argv):
 
-    query = """SELECT * from temps WHERE location_id=3 AND invalid != 1O RDER BY datum""".strip()
+    query = """SELECT * from temps WHERE location_id=3 AND invalid != 1 ORDER BY datum""".strip()
     the_db.query(query)
     data = the_db.store_result().fetch_row(how=1, maxrows=0)
 

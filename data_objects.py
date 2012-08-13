@@ -107,6 +107,7 @@ class ClimateData(DataObject):
         tx = (tmin + tmax) / 2.0
         return max(tx - tbase, 0.0)
 
-
+def main(argv):
+    pass
 
 if __name__ == '__main__': main(sys.argv[1:])

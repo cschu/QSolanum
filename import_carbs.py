@@ -8,11 +8,12 @@ import math
 
 import openpyxl
 
+import sql
 import login
-TROST_DB = login.get_db()
+# TROST_DB = login.get_db()
 
-cast_d = {'s': str, 'n': float}
-
+import OpenPyXl as opx
+from PhenoImporter import PhenoImporter
 """
 ERROR 1452 (23000): Cannot add or update a child row: a foreign key constraint fails (`trost_prod/phenotypes`, CONSTRAINT `fk_phenotypes_samples1` FOREIGN KEY (`sample_id`) REFERENCES `samples` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION)
 
@@ -21,8 +22,6 @@ ERROR 1452 (23000): Cannot add or update a child row: a foreign key constraint f
 LASTID in PHENOTYPES: 215937, 28436 rows in set (0.08 sec)
 
 """
-
-
 
 """
 mysql> desc aliquots;
@@ -39,80 +38,8 @@ mysql> desc aliquots;
 +-------------+--------------+------+-----+---------+----------------+
 """
 
-MYSQL_PHENOTYPE_VALUES = """
-INSERT INTO phenotype_values 
-(id, value_id, phenotype_id, number)
-SELECT NULL, %i, phenotypes.id, %f
-FROM phenotypes
-WHERE phenotypes.sample_id = %i;
-""".strip()
 
-INSERT_PHENOTYPE = """
-INSERT INTO phenotypes
-(id, version, object, program_id, date, time, sample_id, invalid)
-SELECT NULL, NULL, 'LIMS-Aliquot', 4, '%s', '%s', aliquots.id, NULL
-FROM aliquots
-WHERE aliquots.aliquot = %i;
-""".strip().replace('\n', ' ')
 
-INSERT_PHENOTYPE_VALUE = """
-INSERT INTO phenotype_values
-(id, value_id, phenotype_id, number)
-SELECT NULL, %i, phenotypes.id, %f 
-FROM phenotypes
-WHERE phenotypes.id in 
-(SELECT MAX(phenotypes.id) FROM phenotypes);
-""".strip().replace('\n', ' ')
-
-ERRORLOG = open('carb_import_errors.txt', 'w')
-
-#
-class OpenPyXl_Object(object):
-    def __init__(self, fields, dtypes, values, casts=cast_d):
-        self.fields = ['f_' + str(field) 
-                       for field in fields]
-        self.is_valid = True
-        # if not field is None]
-        for i, field in enumerate(self.fields): 
-            print field, field == 'f_None', '->', values[i], '<-'
-            if field != 'f_None':
-                try:
-                    print '>>', field, cast_d[dtypes[i]](values[i])
-                    setattr(self, field, cast_d[dtypes[i]](values[i]))
-                except:
-                    ERRORLOG.write('%s: %s = %s\n' % (self.f_SampleID,
-                                                      field,
-                                                      str(values[i])))
-                    self.is_valid = False
-                    pass
-        pass
-    def get_sql(self, date_='CURDATE()', time_='CURTIME()'):
-        sqlcmd = []            
-        print 'SID', type(self.f_SampleID)
-        for field in self.fields:
-            if field not in ['f_SampleID', 'f_None']:
-                print '!', field, getattr(self, field)
-                print type(getattr(self, field))
-
-                sqlcmd.append((INSERT_PHENOTYPE % (date_, time_,
-                                                   int(self.f_SampleID)),
-                               INSERT_PHENOTYPE_VALUE % \
-                                   (int(field.lstrip('f_')),
-                                    getattr(self, field))))
-                """
-                sqlcmd.append(INSERT_PHENOTYPE % (date_, time_,
-                                                  int(self.f_SampleID)))
-                sqlcmd.append(INSERT_PHENOTYPE_VALUE % \
-                                  (int(field.lstrip('f_')),
-                                   getattr(self, field)))
-                """
-                # sqlcmd.append(MYSQL_PHENOTYPE_VALUES % \
-                #                  (int(field.lstrip('f_')),
-                #                   getattr(self, field),
-                #                   int(self.f_SampleID)))
-        # return '\n'.join(sqlcmd)
-        return sqlcmd
-    pass
             
 #
 def read_sample_aliquot_dic(fn):
@@ -120,70 +47,64 @@ def read_sample_aliquot_dic(fn):
     first_row = True
     for row in csv.reader(open(fn, 'rb'), 
                           delimiter=',', quotechar='"'):
+        print row
         if first_row:
             first_row = False
         else:
             sali_d[int(row[3])] = int(row[0])
     return sali_d
 
-#
-def process_sheet(sheet):
-    header = [cell.value for cell in sheet.rows[0]]
-    dtypes = [cell.data_type for cell in sheet.rows[0]]
-    print header, 'SampleID' in header
-    if not 'SampleID' in header:
-        sys.stderr.write('No header line: Aborting.\n')
-        sys.exit(1)
+
+
+###
+def main(argv):    
     
-    data = []
-    for row in sheet.rows[2:]:
-        row_data = [cell.value for cell in row]
-        row_dtypes = [cell.data_type for cell in row]
-        dobj = OpenPyXl_Object(header, dtypes, row_data)
-        # print dobj.__dict__
-        # print dobj.get_sql()
-        data.append(dobj)
-    return data
-
-#
-def read_xlsx(fn):
-    wb = openpyxl.reader.excel.load_workbook(filename=fn)
-    all_sheets = wb.get_sheet_names()
-    print all_sheets
-    data = []
-
-    for sheet in all_sheets:
-        if sheet == 'Pivottabelle': 
-            continue
-        data += process_sheet(wb.get_sheet_by_name(sheet))
-    return data
+    TROST_DB = login.get_db()
+    errorlog = open('carb_import_errors.txt', 'w')
+    sqlfile = open('carb_import2012.sql', 'w')
+    opxreader = opx.OpenPyXlReader(argv[0], 'SampleID', errlog=errorlog)    
+    sali_d = read_sample_aliquot_dic(argv[1])
+    
+    importer = PhenoImporter(opxreader, TROST_DB, errlog=errorlog, sqlout=sqlfile)
+    
+    for dobj in importer.data:
         
+        try:
+            dobj.fSampleID = sali_d[int(dobj.f_SampleID)]
+        except:
+            errorlog.write('Missing sample: %s\n' % dobj.f_SampleID)
+            dobj.is_valid = False
+            pass
+        
+    importer.do_import('f_SampleID')       
+    
+    sqlfile.close()
+    errorlog.close()
+    TROST_DB.close()    
     pass
-
-def get_modification_time(fn):
-    return time.strftime('%Y-%m-%d %H:%M:%S', 
-                         time.gmtime(os.path.getmtime(fn)))
 
 
 
 ###
-def main(argv):
-
-    TROST_DB_CURSOR = TROST_DB.cursor()
+def main2(argv):
+    ERRORLOG = open('carb_import_errors.txt', 'w')
+    #TROST_DB_CURSOR = TROST_DB.cursor()
 
     fn = argv[0]
-    data = read_xlsx(fn)
-    moddate, modtime = get_modification_time(fn).split()
+    opxreader = opx.OpenPyXlReader(fn, 'SampleID', errlog=ERRORLOG)
     
-    sqlfile = open('carb_import2012.sql', 'w')
+    sqlfile = open('xxx_carb_import2012.sql', 'w')
 
     sali_d = read_sample_aliquot_dic(argv[1])
+    print sali_d
+
 
     count = 0
-    for dobj in data:
+    for dobj in opxreader.get_data(): #data:
         count += 1
         # print 'XXX',      
         # dobj.is_valid = True
+        print dobj.f_SampleID
         try:
             dobj.f_SampleID = sali_d[int(dobj.f_SampleID)]            
         except:
@@ -194,8 +115,10 @@ def main(argv):
         
 
         if dobj.is_valid:
+            print 'VALID', dobj.f_SampleID
             # print dobj.__dict__
-            commands = dobj.get_sql(date_=moddate, time_=modtime)
+            commands = dobj.get_sql(opxreader.moddate, opxreader.modtime, 'f_SampleID')
+            print 'COMMANDS:', commands
             # sqlfile.write('%s\n' % '\n'.join(commands))
             # print '\n'.join(commands)
             # break
@@ -203,7 +126,7 @@ def main(argv):
             for command_pair in commands:
                 sqlfile.write('%s\n%s\n' % command_pair)
                 # continue
-                
+                """
                 try:
                     TROST_DB_CURSOR.execute(command_pair[0])
                     TROST_DB.commit()
@@ -229,6 +152,7 @@ def main(argv):
                     sys.stderr.write('Previous p-command:\n%s\n' % \
                                          command_pair[0])
                     continue
+                """
                 # print '\n'.join(commands)
 
             
@@ -238,7 +162,7 @@ def main(argv):
         pass
     
     sqlfile.close()
-    TROST_DB.close()
+    #TROST_DB.close()
     return None
 
 if __name__ == '__main__': main(sys.argv[1:])
