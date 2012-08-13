@@ -58,7 +58,10 @@ def main(argv):
     
     #data_d = {}
     #for 
-    print data.items()[:4]
+    #print data.items()[:4]
+    for item in data.items():
+        if len(item[1]) > 1:
+            print item
     
     """
     fw_data = [row for row in data if row['value_id'] == 55]
