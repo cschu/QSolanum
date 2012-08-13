@@ -91,6 +91,7 @@ def compute_rwc(data):
                 print 'Original:', candidate_156
                 print 'Duplicate:', row
         pass
+    print 'CANDIDATES:', candidate_69, candidate_156
     """
     if len(candidates_69) > 1:
         print 'Duplicate 69', 
