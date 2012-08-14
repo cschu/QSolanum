@@ -73,8 +73,16 @@ FIELDS = ['sample_id', 'p1_id', 'p1_date',
           'pv2_id', 'pv2_value_id', 'pv2_phenotype_id', 'pv2_number', 'pe2_entity_id']
 
 def compute_rwc(data):
-    candidate_69 = None
+    data = sorted(data, key=lambda x:x['delta_t'])
+    for i, row_i in enumerate(data):
+        if row_i['pv1_value_id'] == 55 and row_i['pv2_value_id'] == 156: 
+            for j, row_j in enumerate(data):
+                
+                
+    
+    """candidate_69 = None
     candidate_156 = None
+    
     for row in sorted(data, key=lambda x:x['delta_t']):
         # print row
         if row['pv2_value_id'] == 69 and row['delta_t'] >= datetime.timedelta(days=2) and row['delta_t'] <= datetime.timedelta(days=7):
@@ -92,6 +100,7 @@ def compute_rwc(data):
                 print 'Original:', candidate_156
                 print 'Duplicate:', row
         pass
+    """
     # if not candidate_69 is None and not candidate_156 is None:
     #    print 'CANDIDATES:', candidate_69, candidate_156
     """
