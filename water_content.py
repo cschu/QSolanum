@@ -48,10 +48,10 @@ ORDER BY sample_id, P1.date, P2.date;
 """.strip().replace('\n', ' ')
 
 
-<<<<<<< HEAD
 WC_TRIPLES_QUERY = """ 
 select 
-P1.sample_id as sample_id, 
+P1.sample_id as sample_id,
+plants.subspecies_id as subspecies,
 P1.id as p1_id, P1.date as p1_date, 
 PV1.*,
 P2.id as p2_id, P2.date as p2_date,
@@ -61,7 +61,7 @@ PV3.*,
 PE1.entity_id as entity_id
 
 from 
-phenotypes as P1 
+plants, phenotypes as P1 
 left join phenotypes as P2
 on P1.sample_id = P2.sample_id
 
@@ -87,6 +87,7 @@ left join phenotype_entities as PE3
 on P3.id = PE3.phenotype_id
 
 where 
+plants.id = P1.sample_id and
 P1.id != P2.id and P1.id != P3.id and P2.id != P3.id and
 P1.object = 'LIMS-Aliquot' and P2.object = 'LIMS-Aliquot' and P3.object = 'LIMS-Aliquot' and
 ((PV1.value_id = 55 and PV2.value_id = 156 and PV3.value_id = 69) or 
@@ -99,6 +100,7 @@ ORDER BY sample_id, P1.date, P2.date, P3.date;
 WC_FWDW_V1_QUERY = """
 select 
 P1.sample_id as sample_id, 
+plants.subspecies_id as subspecies,
 P1.id as p1_id, P1.date as p1_date, 
 PV1.*,
 P2.id as p2_id, P2.date as p2_date,
@@ -106,7 +108,7 @@ PV2.*,
 PE1.entity_id as entity_id
 
 from 
-phenotypes as P1 
+plants, phenotypes as P1 
 left join phenotypes as P2
 on P1.sample_id = P2.sample_id
 
@@ -123,6 +125,7 @@ left join phenotype_entities as PE2
 on P2.id = PE2.phenotype_id
 
 where 
+plants.id = P1.sample_id and
 P1.id != P2.id and 
 P1.object = 'LIMS-Aliquot' and P2.object = 'LIMS-Aliquot' and 
 (PV1.value_id = 55 and PV2.value_id = 69) and
@@ -131,6 +134,7 @@ ORDER BY sample_id, P1.date, P2.date;
 """.strip().replace('\n', ' ')
 
 WC_FWDW_V1_FIELDS = ['sample_id',
+                     'subspecies',
                      'p1_id', 'p1_date', 
                      'pv1_id', 'pv1_value_id', 'pv1_phenotype_id', 'pv1_number',
                      'p2_id', 'p2_date', 
@@ -138,6 +142,7 @@ WC_FWDW_V1_FIELDS = ['sample_id',
                      'entity_id']
 
 WC_TRIPLES_FIELDS = ['sample_id',
+                     'subspecies',
                      'p1_id', 'p1_date', 
                      'pv1_id', 'pv1_value_id', 'pv1_phenotype_id', 'pv1_number',
                      'p2_id', 'p2_date', 
@@ -158,21 +163,23 @@ def make_bitflags(values):
 def make_row_string(row_d, fields, sep=';'):
     return sep.join([str(row_d[field]) for field in fields])
 
-def compute_stuff(data, fields, out, label, f_check_and_compute):
+def compute_stuff(data, fields, out, label, f_check_and_compute, date_field):
     out.write('%s\n' % (';'.join(fields + ['is_valid', 'value'])))
     results = []
     for row_d in data:
-        print row_d
+        print 'yyy', row_d
         row_value, valid_row = f_check_and_compute(row_d)
         row_string = make_row_string(row_d, fields)
+        print 'yyy', row_string
         out.write('%s\n' % (row_string + ';%s;%.5f' % (str(valid_row), row_value)))
-        
-        results.append((row_d['sample_id'], (label, row_value, valid_row)))
+        print 'yyy', row_d['subspecies']
+        results.append(((row_d['sample_id'], row_d['subspecies']), (label, row_value, row_d[date_field], valid_row)))
+        print 'yyy', results[-1]
         pass
     out.close()
     return results
 
-def f_compute_RWC(row_d):
+def f_compute_RWC(row_d):    
     valid_date = check_date(row_d['p1_date'], row_d['p2_date'], (1, 2))
     valid_date &= check_date(row_d['p1_date'], row_d['p3_date'], (2, 7))
     fw = float(row_d['pv1_number'])
@@ -227,7 +234,8 @@ def main(argv):
                              WC_FWDW_V1_FIELDS,
                              open('fwdw_v1_data.csv', 'w'),
                              'fwdw_v1',
-                             f_compute_FW_DW_V1)
+                             f_compute_FW_DW_V1,
+                             'p1_date')
     
     triple_data = prepare_data(C, WC_TRIPLES_QUERY, WC_TRIPLES_FIELDS)
     rwc_data = [row_d for row_d in triple_data if row_d['pv1_value_id'] == 55]
@@ -237,40 +245,83 @@ def main(argv):
                         WC_TRIPLES_FIELDS,
                         open('rwc_data.csv', 'w'),
                         'rwc',
-                        f_compute_RWC)
+                        f_compute_RWC,
+                        'p1_date')
     fw_dw_v23 = compute_stuff(fw_dw_v23_data, 
                               WC_TRIPLES_FIELDS,
                               open('fwdw_v23_data.csv', 'w'), 
                               'fwdw_v23', 
-                              f_compute_FW_DW_V23)
+                              f_compute_FW_DW_V23,
+                              'p2_date')
+    
+    print rwc[:10]
     
     all_items = fw_dw_v1 + fw_dw_v23 + rwc
     all_d = {}
+    
     for key, val in all_items:
-        # print key, val
-        if val[2] == 7:
-            all_d[key] = all_d.get(key, []) + [val[:2]] #[(v[:2]) for v in val if v[2] == 7]
+    #   # print key, val
+        if val[3] & 1 == 1:
+            all_d[key] = all_d.get(key, []) + [val[:4]] #[(v[:2]) for v in val if v[2] == 7]
         
     fo = open('wc_results.csv', 'w')
-    headers = ['Aliquot|Sample_ID', 'fw_dw1', 'fw_dw2', 'rwc1', 'rwc2']
+    headers = ['Aliquot|Sample_ID', 'subspecies',
+               'fw_dw1', 'sample_date_fwdw1', 'quality_fwdw1', 
+               'rwc1', 'sample_date_rwc1', 'quality_rwc1',
+               'fw_dw2', 'sample_date_fwdw2', 'quality_fwdw2', 
+                'rwc2', 'sample_date_rwc2', 'quality_rwc2']
     fo.write('%s\n' % (','.join(headers)))
     
     for key, val in sorted(all_d.items()):
-        print key, val
+        print 'xxx', key, val
         fwdw_count = 0
-        row = ['%i' % key]
+        row = ['%i' % key[0], '%s' % key[1]]
+        
+        val = sorted(val, key=lambda x:(str(x[2]), x[0]))
+        # print val
+        # break
+        state = 'fwdw'
         for v in val:
             if v[0].startswith('fwdw'):
-                fwdw_count += 1
-                row.append('%.5f' % v[1])
-            elif v[0] == 'rwc' and fwdw_count < 2:
-                row.append('N/A')
-                fwdw_count += 1
-                row.append('%.5f' % v[1])
+                if state == 'fwdw':
+                    row.extend(['%.5f' % v[1], str(v[2]), str(v[3])])
+                    state = 'rwc'
+                else:
+                    # 'rwc' expected, but 'fwdw' found
+                    row.extend(['NA', 'NA', 'NA'])
+                    row.extend(['%.5f' % v[1], str(v[2]), str(v[3])])
             else:
-                row.append('%.5f' % v[1])
-        if len(row) < 5:
-            row.append('N/A')
+                if state == 'rwc':
+                    row.extend(['%.5f' % v[1], str(v[2]), str(v[3])])
+                    state = 'fwdw'
+                else:
+                    # 'fwdw' expected, but 'rwc' found 
+                    row.extend(['NA', 'NA', 'NA'])
+                    row.extend(['%.5f' % v[1], str(v[2]), str(v[3])])
+            pass
+        if len(row) < 13:
+            row.extend(['NA' for i in xrange(13 - len(row))])
+        
+#        for v in val:
+#            if v[0].startswith('fwdw'):
+#                fwdw_count += 1
+#                row.append('%.5f' % v[1])
+#                row.append(str(v[2]))
+#            # elif v[0] == 'rwc' and fwdw_count < 2:
+#            else:
+#                #row.append('N/A')
+#                #row.append('N/A')
+#                row.extend(['NA' for i in xrange(2*(2 - fwdw_count))])
+#                # fwdw_count += 1
+#                row.append('%.5f' % v[1])
+#                row.append(str(v[2]))
+#            # else:
+#            #    row.append('%.5f' % v[1])                
+#        if len(row) < 9:
+#            row.extend(['NA' for i in xrange(9 - len(row))])
+#            # row.append('N/A')
+        #print 'zzz', row
+        sys.stdout.write('%s\n' % (','.join(row)))    
         fo.write('%s\n' % (','.join(row)))
     
     fo.close()
