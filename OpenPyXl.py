@@ -15,7 +15,17 @@ import openpyxl
 import sql
 cast_d = {'s': str, 'n': float}
 
-ALLOWED_SHEETS = ['Ergebnisse', 'ParzellenernteZuechter', 'ParzellenernteExperimente']
+ALLOWED_SHEETS = ['Ergebnisse', 'ParzellenernteZuechter', 'ParzellenernteExperimente', 'ALL_IMPORT']
+
+def get_limsobject(string):
+    string = string.lower()
+    if 'plant' in string or 'aliquot' in string:
+        return 'LIMS-Aliquot'
+    elif 'sample' in string:
+        return 'LIMS-Sample'
+    else:
+        return 'unknown' 
+
 
 class OpenPyXlObject(object):
     def __init__(self, fields, dtypes, values, errlog=sys.stderr, casts=cast_d):
@@ -37,15 +47,18 @@ class OpenPyXlObject(object):
                     pass
         pass
     
-    
+    # # VALUES (NULL, NULL, %s, 4, '%s', '%s', %i, NULL);
     def get_sql(self, date_, time_, id_field):
         sqlcmd = []
         for field in self.fields:
             if field not in [id_field, 'f_None']:
-                print '!', field, getattr(self, field), type(getattr(self, field))                
+                # print '!', field, getattr(self, field), type(getattr(self, field))                
                 try:
-                    sqlcmd.append((sql.INSERT_PHENOTYPE % (date_, time_,
-                                                           int(getattr(self, id_field))),
+                    # %i: int(getattr(self, id_field)) -- workaround
+                    # old command in INSERT_PHENOTYPE_PREDB
+                    sqlcmd.append((sql.INSERT_PHENOTYPE % ("'%s'" % get_limsobject(id_field), 
+                                                           date_, time_, 
+                                                           int(getattr(self, id_field))),                                                                 
                                    sql.INSERT_PHENOTYPE_VALUE % \
                                      (int(field.lstrip('f_')),
                                       getattr(self, field),
@@ -76,6 +89,8 @@ class OpenPyXlReader(object):
         sheet_data = []
         for row in sheet.rows[2:]:
             row_data = [cell.value for cell in row]
+            if str(row_data[0]).startswith('#'):
+                continue
             row_dtypes = [cell.data_type for cell in row]
             dobj = OpenPyXlObject(header, row_dtypes, row_data, errlog=self.errlog)
             sheet_data.append(dobj)

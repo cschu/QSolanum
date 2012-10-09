@@ -33,30 +33,51 @@ class PhenoImporter(object):
         db_cursor = self.db.cursor()
         for dobj in self.data:
             if dobj.is_valid:
-                commands = dobj.get_sql(self.date_, self.time_, id_anchor)
+                commands = dobj.get_sql(self.date_, self.time_, id_anchor)                
                 for command_pair in commands:
+                    cmd1, cmd2 = command_pair
+                    
+                    # workaround using dummy samples
+                    # dummy_sample = sql.INSERT_DUMMY_SAMPLE % int(getattr(dobj, id_anchor))
+                    # self.sqlout.write('%s\n' % dummy_sample)                    
+                    
+                    # VALUES (NULL, NULL, %s, 4, '%s', '%s', %i, NULL);                    
                     self.sqlout.write('%s\n%s\n' % command_pair)
                     if real_db_import:
                         
+                        # workaround using dummy samples
+                        # try:
+                        #    db_cursor.execute(dummy_sample)
+                        #    lastrow = int(db_cursor.lastrowid)
+                        #    self.db.commit()
+                        #    cmd1 = cmd1 % lastrow
+                        #except:
+                        #    self.db.rollback()
+                        #    self.errlog.write('SQL-command (p) failed:\n%s\n' % \
+                        #                      dummy_sample)
+                        #    continue
+                        
                         try:
-                            db_cursor.execute(command_pair[0])
+                            db_cursor.execute(cmd1)
                             lastrow = int(db_cursor.lastrowid)
                             self.db.commit()
+                            cmd2 = cmd2 % lastrow
                         except:
                             self.db.rollback()
                             self.errlog.write('SQL-command (p) failed:\n%s\n' % \
-                                              command_pair[0])
+                                              cmd1)
                             continue
                         try:
-                            db_cursor.execute(command_pair[1] % lastrow)
+                            db_cursor.execute(cmd2)
                             self.db.commit()
                         except:
                             self.db.rollback()
                             self.errlog.write('SQL-command (p) failed:\n%s\n' % \
-                                              command_pair[1] % lastrow)
+                                              cmd2)
                             self.errlog.write('Previous p-command:\n%s\n' % \
-                                              command_pair[0])
+                                              cmd1)
                             continue
+                        
             pass
         pass
         

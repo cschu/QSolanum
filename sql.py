@@ -28,7 +28,8 @@ insert into plants (id, location_id) select NULL, locations.id from locations wh
 #WHERE phenotypes.sample_id = %i;
 #""".strip()
 
-INSERT_PHENOTYPE = """
+# PRE DB-REBUILD
+INSERT_PHENOTYPE_PREDB = """
 INSERT INTO phenotypes
 (id, version, object, program_id, date, time, sample_id, invalid)
 SELECT NULL, NULL, 'LIMS-Aliquot', 4, '%s', '%s', aliquots.id, NULL
@@ -36,12 +37,29 @@ FROM aliquots
 WHERE aliquots.aliquot = %i;
 """.strip().replace('\n', ' ')
 
+INSERT_DUMMY_SAMPLE = """
+INSERT into samples
+VALUES (NULL, '1981-01-18 01:51:00', %s);
+""".strip().replace('\n', ' ')
+
+
+INSERT_PHENOTYPE_TEST = """
+INSERT INTO phenotypes
+VALUES(NULL, NULL, 'LIMS-Sample', 4, '%s', '%s', %s, NULL);
+""".strip().replace('\n', ' ')
+
+INSERT_PHENOTYPE = """ 
+INSERT INTO phenotypes
+VALUES (NULL, NULL, %s, 4, '%s', '%s', %i, NULL); 
+""".strip().replace('\n', ' ')
+
+
 INSERT_PHENOTYPE_VALUE = """
 INSERT INTO phenotype_values
 (id, value_id, phenotype_id, number)
 SELECT NULL, %i, phenotypes.id, %f 
 FROM phenotypes
-WHERE phenotypes.id = %s); 
+WHERE phenotypes.id = %s; 
 """.strip().replace('\n', ' ')
 
 
