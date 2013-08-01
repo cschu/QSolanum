@@ -9,7 +9,7 @@ import collections
 
 
 import login
-TROST_DB = login.get_db()
+TROST_DB = login.get_db(db='trost_prod')
 C = TROST_DB.cursor()
 
 import water_content as WC
@@ -44,9 +44,9 @@ samples.id = phenotypes.sample_id;
 
 
 FIELDS_188_190_191 = ['plant_id', 'subspecies', 'culture_id', 'value_id', 'number']
-FIELDS_55_69_366 = ['plant_id', 'subspecies', 'culture_id',
-                    'p1_id', 'p1_date', 'p2_id', 'p2_date', 
-                    'value_id1', 'pv1_number', 'value_id2', 'pv2_number', 'entity']
+FIELDS_55_69 = ['plant_id', 'subspecies', 'culture_id',
+                'p1_id', 'p1_date', 'p2_id', 'p2_date', 
+                'value_id1', 'pv1_number', 'value_id2', 'pv2_number', 'entity']
 FIELDS_163_164_69_225 = ['plant_id', 'subspecies', 'culture_id',
                          'p1_id', 'p1_date', 'p2_id', 'p2_date', 'p3_id', 'p3_date',   
                          'value_id1', 'pv1_number', 'value_id2', 'pv2_number', 
@@ -56,7 +56,13 @@ FIELDS_163_164_69_225 = ['plant_id', 'subspecies', 'culture_id',
 HEADERS_188_190_191 = ['Culture_ID', 'Plant_ID', 'Subspecies', '188', '190', '191']
 HEADERS_55_69_366 = []
 
-VALID_CULTURES = (44443, 45985, 45990, 46150, 56726, 56875, 57802, 57803, 58243, 60319)
+# VALID_CULTURES = (44443, 45985, 45990, 46150, 48656, 56726, 56875, 57802, 57803, 58243, 60319)
+VALID_CULTURES = (51790,)
+
+QUERY_188_190_191 = """
+SELECT 
+%s
+""".strip().replace('\n', ' ') % str(VALID_CULTURES)
 
 QUERY_188_190_191 = """
 SELECT
@@ -75,7 +81,7 @@ cultures.id = plants.culture_id AND
 cultures.id IN %s;
 """.strip().replace('\n', ' ') % str(VALID_CULTURES)
 
-QUERY_55_69_366 = """ 
+QUERY_55_69_WRONG = """ 
 SELECT
 P1.plant_id,
 plants.name AS subspecies,
@@ -102,24 +108,28 @@ WHERE
 plants.id = P1.plant_id AND
 P1.id != P2.id AND 
 (PV1.value_id = 55 AND PV2.value_id = 69) AND
-(PE1.entity_id = 366 AND PE1.entity_id = PE2.entity_id) AND
+(PE1.entity_id = %s AND PE1.entity_id = PE2.entity_id) AND
+PV1.number IS NOT NULL AND PV2.number IS NOT NULL AND
 culture_id IN %s
 ORDER BY P1.plant_id, P1.date, P2.date;
-""".strip().replace('\n', ' ') % str(VALID_CULTURES)
+""".strip().replace('\n', ' ') % ('%i', str(VALID_CULTURES))
 
-QUERY_163_164_69_225 = """
+
+QUERY_55_69 = """ 
 SELECT
 P1.plant_id,
 plants.name AS subspecies,
 plants.culture_id AS culture_id,
 P1.id AS p1_id, P1.date AS p1_date, 
-P2.id AS p2_id, P2.date AS p2_date, 
-P3.id AS p3_id, P3.date AS p3_date,
+P2.id AS p2_id, P2.date AS p2_date,
+P3.id AS p3_id, P3.date AS p3_date,  
 PV1.value_id AS value_id1, PV1.number AS pv1_number,
 PV2.value_id AS value_id2, PV2.number AS pv2_number,
 PV3.value_id AS value_id3, PV3.number AS pv3_number,
-PE1.entity_id AS entity_id
-FROM 
+PE1.entity_id AS entity_id1,
+PE2.entity_id AS entity_id2,
+PE3.entity_id AS entity_id3
+FROM
 plants,
 pheno_dummy AS P1
 LEFT JOIN pheno_dummy AS P2
@@ -138,13 +148,17 @@ LEFT JOIN phenotype_entities AS PE2
 ON P2.id = PE2.phenotype_id
 LEFT JOIN phenotype_entities AS PE3
 ON P3.id = PE3.phenotype_id
-WHERE
+WHERE 
 plants.id = P1.plant_id AND
 P1.id != P2.id AND P1.id != P3.id AND P2.id != P3.id AND
-(PV1.value_id = 163 AND PV2.value_id = 164 AND (PV3.value_id = 69 OR PV3.value_id = 225)) AND
-(PE1.entity_id IN (%s) AND PE1.entity_id = PE2.entity_id AND PE1.entity_id = PE3.entity_id) 
-ORDER BY P1.plant_id, P1.date, P2.date, P3.date;
-""".strip().replace('\n', ' ') % ('%i')#, str(VALID_CULTURES))
+(PV1.value_id = 55 AND PE1.entity_id = -12345) AND
+(PV2.value_id = 69 AND PE2.entity_id = -12345) AND
+(PV3.value_id = 55 AND PE3.entity_id = 12) AND
+PV1.number IS NOT NULL AND PV2.number IS NOT NULL AND PV3.number IS NOT NULL AND
+culture_id IN %s
+ORDER BY P1.plant_id, P1.date, P2.date;
+""".strip().replace('\n', ' ') % (str(VALID_CULTURES))
+
 
 def compute_starch_from_fwdw(fw_dw):
     return (fw_dw * 100.0 - 6.0313) / 10.0
@@ -174,8 +188,7 @@ def write_data(data, headers, write_headers=False, out=sys.stdout):
             if head in v:
                 row += [v[head]]
             else:
-                row += ['']
-        
+                row += ['']        
         
         # row += [v_[1] for v_ in sorted(v.items())]
         out.write(','.join(map(str, row)) + '\n')
@@ -183,45 +196,41 @@ def write_data(data, headers, write_headers=False, out=sys.stdout):
     pass  
 
 ALL_HEADERS = ['Culture_ID', 'Plant_ID', 'Subspecies',
-               55, 69, 163, 164, 188, 225, 190, 191]
+               55, 69, 188, 190, 191]
 
-    
-def process_data_55_69_366(data):
+def process_data_55_69(data):
     data_d = collections.defaultdict(dict)
     for d in data:
+        # print d
         key = (d['culture_id'], d['plant_id'], d['subspecies'])
-        data_d[key][d['value_id1']] = float(d['pv1_number'])
-        data_d[key][d['value_id2']] = float(d['pv2_number'])
-        data_d[key]['pv1_number'] = float(d['pv1_number'])
-        data_d[key]['pv2_number'] = float(d['pv2_number'])
+        try:
+            pv1_number = float(d['pv1_number'])
+        except:
+            continue
+        try:
+            pv2_number = float(d['pv2_number'])
+        except:
+            continue
+        
+        data_d[key][d['value_id1']] = pv1_number
+        data_d[key][d['value_id2']] = pv2_number
+        data_d[key]['pv1_number'] = pv1_number
+        data_d[key]['pv2_number'] = pv2_number
         data_d[key]['p1_date'] = d['p1_date']
         data_d[key]['p2_date'] = d['p2_date']
-        fw_dw, valid_row = WC.f_compute_FW_DW_V1(data_d[key])
+        dw_fw, valid_row = WC.f_compute_DW_FW(data_d[key])
         data_d[key]['valid'] = valid_row
-        data_d[key][190] = compute_starch_from_fwdw(fw_dw)        
-        data_d[key][191] = data_d[key][55] * data_d[key][190] / 100.0
+        
+        fw = float(data_d[key]['pv1_number'])        
+        dw = float(data_d[key]['pv2_number'])
+        dw_fw = dw * 100.0 / fw
+                
+        data_d[key][190] = (dw_fw - 6.0313) / 10.0        
+        data_d[key][191] = data_d[key][55] * data_d[key][190] / 1000.0
         # print data_d[key]
     return data_d
 
-def process_data_163_164_69_225(data):
-    data_d = collections.defaultdict(dict)
-    for d in data:
-        key = (d['culture_id'], d['plant_id'], d['subspecies'])
-        data_d[key][d['value_id1']] = float(d['pv1_number'])
-        data_d[key][d['value_id2']] = float(d['pv2_number'])
-        data_d[key][d['value_id3']] = float(d['pv3_number'])
-        data_d[key]['pv1_number'] = float(d['pv1_number'])
-        data_d[key]['pv2_number'] = float(d['pv2_number'])
-        data_d[key]['pv3_number'] = float(d['pv3_number'])
-        data_d[key]['p1_date'] = d['p1_date']
-        data_d[key]['p2_date'] = d['p2_date']
-        data_d[key]['p3_date'] = d['p3_date']
-        fw_dw, valid_row = WC.f_compute_FW_DW_V23(data_d[key])
-        data_d[key]['valid'] = valid_row
-        data_d[key][190] = compute_starch_from_fwdw(fw_dw)        
-        data_d[key][191] = (data_d[key][164] - data_d[key][163]) * data_d[key][190] / 100.0
-        # print data_d[key]    
-    return data_d
+
 
 
 def main(argv):
@@ -239,14 +248,9 @@ def main(argv):
     data = process_data_188_190_191(prepare_data(C, QUERY_188_190_191, FIELDS_188_190_191))
     write_data(data, out=out, headers=ALL_HEADERS, write_headers=True)
     
-    # get data from 366:55,69 (greenhouse, leaf)
-    data = process_data_55_69_366(prepare_data(C, QUERY_55_69_366, FIELDS_55_69_366))
-    write_data(data, headers=ALL_HEADERS, out=out, write_headers=False)
-    
-    # get data from 366:163,164,69/225 (field, leaf)
-    # print QUERY_163_164_69_225 % 366
-    # data = process_data_163_164_69_225(prepare_data(C, QUERY_163_164_69_225 % 366, FIELDS_163_164_69_225))
-    # write_data(data, headers=ALL_HEADERS, out=out, write_headers=True)
+    # get data from -12345:55_69 (Pruef1.2?)
+    # data = process_data_55_69(prepare_data(C, QUERY_55_69 % (-12345), FIELDS_55_69))
+    # write_data(data, headers=ALL_HEADERS, out=out, write_headers=False)
     
     # C.execute(DROP_PHENO_DUMMY)
     pass

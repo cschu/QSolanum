@@ -157,6 +157,16 @@ def f_compute_RWC(row_d):
     valid_row = make_bitflags([valid_date, valid_values, valid_result])    
     return rwc, valid_row
 
+def f_compute_DW_FW(row_d):
+    valid_date = check_date(row_d['p1_date'], row_d['p2_date'], (1, 7))
+    fw = float(row_d['pv1_number'])
+    dw = float(row_d['pv2_number'])
+    valid_values = (fw >= dw)
+    dw_fw = dw * 100.0/fw 
+    valid_result = True
+    valid_row = make_bitflags([valid_date, valid_values, valid_result])
+    return dw_fw, valid_row
+
 def f_compute_FW_DW_V1(row_d):
     valid_date = check_date(row_d['p1_date'], row_d['p2_date'], (1, 7))
     fw = float(row_d['pv1_number'])
