@@ -1,0 +1,25 @@
+"quality_values explained:"			
+	"date_check"	"values_check"	"result_check"
+7	"PASS"	"PASS"	"PASS"
+"6*"	"FAIL"	"PASS"	"PASS"
+5	"PASS"	"FAIL"	"PASS"
+"4*"	"FAIL"	"FAIL"	"PASS"
+3	"PASS"	"PASS"	"FAIL"
+"2*"	"FAIL"	"PASS"	"FAIL"
+1	"PASS"	"FAIL"	"FAIL"
+"0*"	"complete and utter insanity: date check failed, as well as both sanity checks"		
+			
+"*: filtered automatically (due to failed date-check), thus not in table"			
+			
+			
+	"date_checks"	"values_checks"	"result_checks"
+"RWC"			
+	"FW_date + 1 <= SW_date <= FW_date + 2"	"SW >= FW >= DW"	"RWC in [0,1]"
+	"FW_date + 2 <= DW_date <= FW_date + 7"		
+			
+"FW_DW (greenhouse, leaf)"			
+	"FW_date + 1 <= DW_date <= FW_date + 7"	"FW >= DW"	"FW_DW in [1, 15]"
+			
+"FW_DW (field, leaf), (greenhouse, tuber)"			
+	"FWb_date – 10 <= tara_date <= FWb_date – 1"	"FWb >= tara"	"FW_DW in [1, 15]"
+	"FWb_date + 1 <= DW_date <= FWb_date + 7 or FWb_date + 1 <= DWb_date <= FWb_date + 7"		
