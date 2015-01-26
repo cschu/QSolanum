@@ -17,7 +17,7 @@ import sql
 cast_d = {'s': str, 'n': float}
 
 ALLOWED_SHEETS = ['Ergebnisse', 'ParzellenernteZuechter', 'ParzellenernteExperimente', 'ALL_IMPORT',
-                  'Parzellenernte_Experimente']
+                  'TUBER_IMPORT', 'Parzellenernte_Experimente', 'Feld_JKI', 'pots_JKI']
 
 def get_limsobject(string):
     string = string.lower()
@@ -46,14 +46,15 @@ def getsql_from_XML_OpenPyXl(obj, date_, time_):
 def getsql_from_OpenPyXl(obj, date_, time_, id_field):
     sql_commands = []    
     plant_links = []
-    if 'f_Entity' in obj.fields:        
-        f_entity = int(getattr(obj, 'f_Entity'))    
+    if 'f_Entity' in obj.fields:
+        f_entity = int(getattr(obj, 'f_Entity'))            
     else:
         f_entity = '-180181'
     if 'f_Date' in obj.fields:
         f_date = getattr(obj, 'f_Date').split()[0]
     else:
         f_date = date_
+        
     f_obj = get_limsobject(id_field)
     if f_obj == 'LIMS-Aliquot':
         if 'plant' in id_field.lower():
@@ -67,15 +68,37 @@ def getsql_from_OpenPyXl(obj, date_, time_, id_field):
         linktable = 'phenotype_lines'
     else:
         linktable = None
+
     f_id = int(getattr(obj, id_field))
+    
+    if 'f_Treatment' in obj.fields:
+        f_treatment = getattr(obj, 'f_Treatment')
+        cmd1 = ('INSERT', 'phenotypes', f_obj, f_date, 805, f_treatment, 'NULL')
+        sql_commands.append(cmd1)
+        if linktable is not None:
+            cmd2 = ('LINK', linktable, f_id, 'LAST_INSERT_ID()')
+            sql_commands.append(cmd2)
+    
+    
+
+
         
     for field in obj.fields:
-        if field not in [id_field, 'f_None', 'f_Entity', 'f_Date']:
-            if not field.startswith('f_link'):
+        if field not in [id_field, 'f_None', 'f_Entity', 'f_Date', 'f_Treatment']:
+            if field.startswith('f_Categorical'):
+                f_category = getattr(obj, field)
+                cmd1 = ('INSERT', 'phenotypes', f_obj, f_date, str(f_entity), f_category, 'NULL')
+                sql_commands.append(cmd1)
+                if linktable is not None:
+                    cmd2 = ('LINK', linktable, f_id, 'LAST_INSERT_ID()')
+                    sql_commands.append(cmd2)
+            elif not field.startswith('f_link'):
                 value = getattr(obj, field) 
                 print 'VALUE=', value, value is None, isinstance(value, str)
-                if value == 'None':
+                if value == 'None' or 'NULL' in str(value):
                     value = 'NULL'
+                if str(value) == '163' and str(f_entity) == '366':
+                    f_entity = '803'
                 cmd1 = ('INSERT', 'phenotypes', f_obj, f_date, f_entity, field.lstrip('f_'), value)
                 sql_commands.append(cmd1)
                 if linktable is not None:

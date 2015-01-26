@@ -35,6 +35,7 @@ INSERT INTO phenotypes
 VALUES (NULL, NULL, '%s', 4, '%s', '00:00:00', NULL, %s, %s, %s); 
 """.strip().replace('\n', ' ')
 
+# weird: 2013-11-08 - had to insert NULL into tuple...
 SET_LINKS = """
 INSERT INTO %s VALUES (NULL, %i, %s);
 """.strip().replace('\n', ' ')

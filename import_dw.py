@@ -12,17 +12,23 @@ import OpenPyXl as opx
 from PhenoImporter import PhenoImporter 
 
 ###
-def main(argv):    
+def main(argv):   
     
-    TROST_DB = login.get_db(db='trost_prod_reimport')
-    errorlog = open(argv[0].rstrip('.xlsx') + '.sql_errors.txt', 'w')
-    sqlfile = open(argv[0].rstrip('.xlsx') + '.import.sql', 'w')
-    opxreader = opx.OpenPyXlReader(argv[0], 'Sample_ID', errlog=errorlog,
+    fn = argv[0]
+    try:
+        targetID = argv[1]
+    except:
+        targetID = 'Plant_ID' 
+    
+    TROST_DB = login.get_db(db='trost_prod')
+    errorlog = open(fn.rstrip('.xlsx') + '.sql_errors_fieldonly.txt', 'w')
+    sqlfile = open(fn.rstrip('.xlsx') + '.import_fieldonly.sql', 'w')
+    opxreader = opx.OpenPyXlReader(fn, targetID, errlog=errorlog,
                                    allowed_sheets=['JKIShelter2012', 'JKIGWH2012', 'JKIFeld2012',
-                                                   'Boehlendorf2012'])    
+                                                   'Boehlendorf2012', 'JKIFeld2013'])    
     # print 'x'
     importer = PhenoImporter(opxreader, TROST_DB, errlog=errorlog, sqlout=sqlfile)
-    importer.do_import('f_Sample_ID', real_db_import=True)
+    importer.do_import('f_' + targetID, real_db_import=True)
     # print 'y'
     #try:
     #    importer.do_import('f_Plant_ID', real_db_import=True)       

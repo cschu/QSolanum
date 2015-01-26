@@ -32,7 +32,7 @@ TRIAL_D = {'TRIALS_2011': (47107, 47109, 47110, 47111, 47112, 47114, 47115, 4711
            'TRIALS_2012': (56876, 56877, 56878, 56879, 56880, 56881, 56882, 56883, 56884)}
 
 SUBSPECIES_QUERY = """
-SELECT id FROM subspecies WHERE id NOT IN (1, 91)
+SELECT id FROM subspecies WHERE id NOT IN (1, 91) AND id > 0
 """.strip().replace('\n', ' ')
 
 STARCH_QUERY = """ 
@@ -46,7 +46,8 @@ p3.number AS starch_yield,
 C.pflanzabstand as dist_plants,
 C.reihenabstand as dist_rows,
 C.plantspparcelle as n_plants,
-C.location_id as location
+C.location_id as location,
+p4.value_id as `condition`
 FROM 
 plants PL 
 JOIN phenotype_plants AS pp1 ON pp1.plant_id = PL.id 
@@ -62,15 +63,15 @@ WHERE
 p1.value_id = 188 AND
 p2.value_id = 190 AND
 p3.value_id = 191 AND
-p4.value_id IN (169,171) AND
+p4.value_id IN (169, 170, 171) AND
 PL.culture_id IN %s
 """.strip().replace('\n', ' ')
 
 STARCH_QUERY_2012 = STARCH_QUERY % str(TRIALS_2012)
 STARCH_QUERY_2011 = STARCH_QUERY % str(TRIALS_2011)
 
-STARCH_QUERY_FIELDS = ['plantID', 'cultureID', 'subspeciesID', 'tuberMass', 'starchContent', 'starchYield', 'dist_plants', 'dist_rows', 'n_plants', 'location']
-STARCH_QUERY_CASTS = [int, int, int, float, float, float, float, float, int, int]
+STARCH_QUERY_FIELDS = ['plantID', 'cultureID', 'subspeciesID', 'tuberMass', 'starchContent', 'starchYield', 'dist_plants', 'dist_rows', 'n_plants', 'location', 'condition']
+STARCH_QUERY_CASTS = [int, int, int, float, float, float, float, float, int, int, int]
 
 def checkStarchContent(obj):
     starchContent = getattr(obj, 'starchContent')
@@ -153,9 +154,13 @@ def prepare_data(C, query, fields, casts):
     C.execute(query)
     
     for row in C.fetchall():
-        row_d = dict(zip(fields, 
-                         [cast(value) for cast, value in zip(casts, row)]))
-        data.append(StarchData(**row_d))
+        try:
+            row_d = dict(zip(fields, 
+                             [cast(value) for cast, value in zip(casts, row)]))
+            data.append(StarchData(**row_d))
+        except:
+            print 'ERR', row
+            continue
     location = data[0].location
     return data, location
 

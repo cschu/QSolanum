@@ -5,7 +5,8 @@ import MySQLdb
 try:
     import cx_Oracle
 except:
-    sys.stderr.write('Import: Oracle driver missing in login.py\n')
+    # sys.stderr.write('Import: Oracle driver missing in login.py\n')
+    
     pass
 
 DB_HOST = 'cosmos'
